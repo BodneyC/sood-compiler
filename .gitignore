@@ -1,0 +1,15 @@
+# Development
+tests/.vim
+compile_commands.json
+
+# Dumps
+*.log
+
+# Generated sources
+lexer.cpp
+parser.cpp
+parser.hpp
+
+# Binaries
+*.o
+parser
