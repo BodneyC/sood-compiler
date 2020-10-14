@@ -3,43 +3,46 @@
 // Yes, this is all bad practice...
 
 const int INDENT_WIDTH = 2;
-int ilvl = 0;
 
-std::string indent() { return std::string(ilvl, ' '); }
-void inc_ilvl(int num = 1) { ilvl += (num * INDENT_WIDTH); }
-void dec_ilvl(int num = 1) {
-  int width = num * INDENT_WIDTH;
-  if (ilvl >= width)
-    ilvl -= width;
-}
+struct Indent {
+  int ilvl = 0;
+  std::string indent() { return std::string(ilvl, ' '); }
+  void inc(int num = 1) { ilvl += (num * INDENT_WIDTH); }
+  void dec(int num = 1) {
+    int width = num * INDENT_WIDTH;
+    if (ilvl >= width)
+      ilvl -= width;
+  }
+};
+Indent indt;
 
 void NAssignment::print(std::ostream &out) const {
-  out << indent() << "assignment { lhs: " << lhs << ", rhs: ";
-  inc_ilvl();
+  out << indt.indent() << "assignment { lhs: " << lhs << ", rhs: ";
+  indt.inc();
   out << rhs;
-  dec_ilvl();
-  out << indent() << "}" << '\n';
+  indt.dec();
+  out << indt.indent() << "}" << '\n';
 }
 
 void NBinaryExpression::print(std::ostream &out) const {
   out << '\n'
-      << indent() << "binary_expression { lhs: " << lhs << ", op: " << op
+      << indt.indent() << "binary_expression { lhs: " << lhs << ", op: " << op
       << ", rhs: ";
-  inc_ilvl(2);
-  out << rhs << " }";
-  dec_ilvl(2);
+  indt.inc(2);
+  out << rhs << " }" << '\n';
+  indt.dec(2);
 }
 
 void NBlock::print(std::ostream &out) const {
-  out << indent() << "block {" << '\n';
-  inc_ilvl();
+  out << indt.indent() << "block {" << '\n';
+  indt.inc();
   for (auto &stmt : stmts) {
     out << *stmt;
     if (&stmt != &stmts.back())
       out << '\n';
   }
-  dec_ilvl();
-  out << indent() << "}" << '\n';
+  indt.dec();
+  out << indt.indent() << "}" << '\n';
 }
 
 void NExpressionStatement::print(std::ostream &out) const {
@@ -47,78 +50,78 @@ void NExpressionStatement::print(std::ostream &out) const {
 }
 
 void NFloat::print(std::ostream &out) const {
-  // No `indent()`
+  // No `indt.indent()`
   out << "float(" << val << ")";
 }
 
 void NFunctionCall::print(std::ostream &out) const {
-  out << '\n' << indent() << "func_call { id: " << func;
+  out << '\n' << indt.indent() << "func_call { id: " << func;
   if (args.size()) {
     out << ", args: { " << '\n';
-    inc_ilvl(2);
-    out << indent();
+    indt.inc(2);
+    out << indt.indent();
     for (auto &arg : args)
       out << *arg << ", ";
-    dec_ilvl(2);
+    indt.dec(2);
     out << "}";
   }
   out << " }" << '\n';
 }
 
 void NElseStatement::print(std::ostream &out) const {
-  out << indent() << "{" << '\n';
-  inc_ilvl();
+  out << indt.indent() << "{" << '\n';
+  indt.inc();
   out << block;
-  dec_ilvl();
-  out << indent() << "}" << '\n';
+  indt.dec();
+  out << indt.indent() << "}" << '\n';
 }
 
 void NIfStatement::print(std::ostream &out) const {
-  out << indent() << "if { cond: ";
-  inc_ilvl(2);
+  out << indt.indent() << "if { cond: ";
+  indt.inc(2);
   out << cond;
-  dec_ilvl();
+  indt.dec();
   out << "," << '\n' << block;
-  dec_ilvl();
-  out << indent() << "}";
+  indt.dec();
+  out << indt.indent() << "}";
   if (els)
-    out << '\n' << indent() << "else \\" << '\n' << *els;
+    out << '\n' << indt.indent() << "else \\" << '\n' << *els;
 }
 
 void NUntilStatement::print(std::ostream &out) const {
-  out << indent() << "until { cond: ";
-  inc_ilvl(2);
+  out << indt.indent() << "until { cond: ";
+  indt.inc(2);
   out << cond;
-  dec_ilvl();
+  indt.dec();
   out << "," << '\n' << block;
-  dec_ilvl();
-  out << indent() << "}" << '\n';
+  indt.dec();
+  out << indt.indent() << "}" << '\n';
 }
 
 void NWhileStatement::print(std::ostream &out) const {
-  out << indent() << "while { cond: ";
-  inc_ilvl(2);
+  out << indt.indent() << "while { cond: ";
+  indt.inc(2);
   out << cond;
-  dec_ilvl();
+  indt.dec();
   out << "," << '\n' << block;
-  dec_ilvl();
-  out << indent() << "}" << '\n';
+  indt.dec();
+  out << indt.indent() << "}" << '\n';
 }
 
 void NFunctionDeclaration::print(std::ostream &out) const {
-  out << indent() << "func_decl { type: " << type << ", name: " << id << ", ";
-  inc_ilvl();
+  out << indt.indent() << "func_decl { type: " << type << ", name: " << id << ", ";
+  indt.inc();
   if (args.size()) {
     out << "args: { " << '\n';
-    inc_ilvl();
+    indt.inc();
     for (auto &arg : args)
       out << *arg;
-    dec_ilvl();
-    out << indent() << "}, ";
+    indt.dec();
+    out << indt.indent() << "}, ";
   }
   out << '\n' << block;
-  dec_ilvl();
-  out << indent() << "}" << '\n';
+  indt.dec();
+  out << indt.indent() << "}" << '\n';
 }
 
 void NIdentifier::print(std::ostream &out) const {
@@ -128,15 +131,15 @@ void NIdentifier::print(std::ostream &out) const {
 void NInteger::print(std::ostream &out) const { out << "int(" << val << ")"; }
 
 void NRead::print(std::ostream &out) const {
-  out << indent() << "read { from: " << from << ", to: " << to << " }" << '\n';
+  out << indt.indent() << "read { from: " << from << ", to: " << to << " }" << '\n';
 }
 
 void NWrite::print(std::ostream &out) const {
-  out << indent() << "write { exp: " << exp << ", to: " << to << " }" << '\n';
+  out << indt.indent() << "write { exp: " << exp << ", to: " << to << " }" << '\n';
 }
 
 void NReturn::print(std::ostream &out) const {
-  out << indent() << "return { exp: " << exp << " }" << '\n';
+  out << indt.indent() << "return { exp: " << exp << " }" << '\n';
 }
 
 void NString::print(std::ostream &out) const {
@@ -148,12 +151,12 @@ void NUnaryExpression::print(std::ostream &out) const {
 }
 
 void NVariableDeclaration::print(std::ostream &out) const {
-  out << indent() << "var_decl { type: " << type << ", lhs: " << lhs;
+  out << indt.indent() << "var_decl { type: " << type << ", lhs: " << lhs;
   if (rhs) {
     out << ", rhs: ";
-    inc_ilvl(2);
+    indt.inc(2);
     out << *rhs;
-    dec_ilvl(2);
+    indt.dec(2);
   }
   out << " }" << '\n';
 }
