@@ -12,6 +12,24 @@ class NStatement;
 class NExpression;
 class CodeGenContext;
 
+enum OPS {
+  OP_EQUAL_TO,
+  OP_NOT_EQUAL_TO,
+  OP_LESS_THAN,
+  OP_LESS_THAN_EQUAL_TO,
+  OP_MORE_THAN,
+  OP_MORE_THAN_EQUAL_TO,
+  OP_NOT,
+  OP_NEGATIVE,
+  OP_PLUS,
+  OP_MINUS,
+  OP_MULTIPLIED_BY,
+  OP_DIVIDED_BY,
+  OP_MODULO,
+  OP_ALSO,
+  OP_ALTERNATIVELY,
+};
+
 typedef std::vector<NVariableDeclaration *> NVariableList;
 typedef std::vector<NStatement *> NStatementList;
 typedef std::vector<NExpression *> NExpressionList;
@@ -112,13 +130,31 @@ public:
   virtual void print(std::ostream &) const;
 };
 
-/* -------- Based on NStatement --------- */
-
-class NAssignment : public NExpression {
+class NAssignment : public NStatement {
 public:
   NIdentifier &lhs;
   NExpression &rhs;
   NAssignment(NIdentifier &lhs, NExpression &rhs) : lhs(lhs), rhs(rhs) {}
+  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual void print(std::ostream &) const;
+};
+
+/* -------- Based on NStatement --------- */
+
+class NRead : public NStatement {
+public:
+  NExpression &from;
+  NExpression &to;
+  NRead(NExpression &from, NExpression &to) : from(from), to(to) {}
+  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual void print(std::ostream &) const;
+};
+
+class NWrite : public NStatement {
+public:
+  NExpression &exp;
+  NExpression &to;
+  NWrite(NExpression &exp, NExpression &to) : exp(exp), to(to) {}
   // virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
@@ -150,6 +186,48 @@ public:
   }
   NVariableDeclaration(NIdentifier &type, NIdentifier &lhs, NExpression *rhs)
       : type(type), lhs(lhs), rhs(rhs) {}
+  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual void print(std::ostream &) const;
+};
+
+class NElseStatement : public NStatement {
+public:
+  NBlock &block;
+  NElseStatement(NBlock &block) : block(block) {}
+  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual void print(std::ostream &) const;
+};
+
+class NUntilStatement : public NStatement {
+public:
+  NExpression &cond;
+  NBlock &block;
+  NUntilStatement(NExpression &cond, NBlock &block)
+      : cond(cond), block(block) {}
+  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual void print(std::ostream &) const;
+};
+
+class NWhileStatement : public NStatement {
+public:
+  NExpression &cond;
+  NBlock &block;
+  NWhileStatement(NExpression &cond, NBlock &block)
+      : cond(cond), block(block) {}
+  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual void print(std::ostream &) const;
+};
+
+class NIfStatement : public NStatement {
+public:
+  NExpression &cond;
+  NBlock &block;
+  NStatement *els;
+  NIfStatement(NExpression &cond, NBlock &block) : cond(cond), block(block) {
+    els = nullptr;
+  }
+  NIfStatement(NExpression &cond, NBlock &block, NStatement *els)
+      : cond(cond), block(block), els(els) {}
   // virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };

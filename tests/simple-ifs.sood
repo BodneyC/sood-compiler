@@ -1,0 +1,14 @@
+# vim: ft=sood
+
+# standard if
+if b is equal to 5,
+  # nested if
+  if b is equal to 5,
+    b is b plus 2...
+  b is b plus 2...
+# else if
+else if b is equal to 50,
+  b is b multiplied by 2...
+# else
+else,
+  b is 0...

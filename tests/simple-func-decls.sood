@@ -1,33 +1,30 @@
 # vim: ft=sood
 
-# Assignments
-b is a string of value 'Hello'. # fully qualified
-b is a string of value 'this
-    is a multi
-    line string'.
-b is b is more than 5. # Boolean
-b is 5. # numeric
-
 # Function declaration - no args
-c is a function of type integer and of value,
+c is a function of type integer and of statements,
   pete is pete plus six...
 
 # Function declaration - args
-c is a function of type integer with arguments of: a string e; and of value,
+c is a function of type integer with arguments of: a string e; and of statements,
   pete is pete plus six...
 
 # Function declaration - split line
 c is a function of type integer with arguments of:
     a string e;
-    and of value,
+    and of statements,
   pete is pete plus six...
 
 # Function declaration - traditional block
-c is a function of type integer and of value,
+c is a function of type integer and of statements,
   pete is pete plus six.
 ..
 
 # Function declaration - multiple statements
-c is a function of type integer and of value,
+c is a function of type integer and of statements,
   pete is pete is less than six.
   pete is pete plus six...
+
+# Function declaration - return val
+c is a function of type integer and of statements,
+  pete is pete plus six.
+  return pete...

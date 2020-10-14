@@ -1,0 +1,25 @@
+# vim: ft=sood
+
+zero  is an integer of value 0.
+one   is an integer of value 1.
+three is an integer of value 3.
+five  is an integer of value 5.
+
+number_of_repetitions is an integer of value 10.
+
+fizz_buzz is a function of type string with arguments of:
+      an integer num; and of statements,
+  if num modulo three is equal to zero also num modulo five is equal to zero,
+    return 'FizzBuzz'...
+  if num modulo three is equal to zero,
+    return 'Fizz'...
+  if num modulo five is equal to zero,
+    return 'Buzz'...
+  num_str is a string of value num.
+  return num_str...
+
+counter is an integer of value zero.
+while counter is less than number_of_repetitions,
+  output is fizz_buzz called with: counter...
+  write output to stdout.
+  counter is counter plus one...
