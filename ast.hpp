@@ -42,7 +42,7 @@ protected:
 
 public:
   virtual ~Node() {}
-  // virtual llvm::Value *code_generate(CodeGenContext &) = 0;
+  virtual llvm::Value *code_generate(CodeGenContext &) = 0;
   friend std::ostream &operator<<(std::ostream &out, Node const &obj) {
     obj.print(out);
     return out;
@@ -59,7 +59,7 @@ class NInteger : public NExpression {
 public:
   std::int64_t val;
   NInteger(std::int64_t val) : val(val) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -67,7 +67,7 @@ class NFloat : public NExpression {
 public:
   double val;
   NFloat(double val) : val(val) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -78,7 +78,7 @@ public:
     // Cut the surrounding quotes, could be more dynamic...
     this->val = val.substr(1, val.size() - 2);
   }
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -87,18 +87,18 @@ public:
   std::string val;
   NIdentifier() {}
   NIdentifier(std::string val) : val(val) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
 class NFunctionCall : public NExpression {
 public:
-  NIdentifier &func;
+  NIdentifier &id;
   NExpressionList args;
-  NFunctionCall(NIdentifier &func) : func(func) {}
-  NFunctionCall(NIdentifier &func, NExpressionList args)
-      : func(func), args(args) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  NFunctionCall(NIdentifier &id) : id(id) {}
+  NFunctionCall(NIdentifier &id, NExpressionList args)
+      : id(id), args(args) {}
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -107,7 +107,7 @@ public:
   int op;
   NExpression &rhs;
   NUnaryExpression(int op, NExpression &rhs) : rhs(rhs), op(op) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -118,7 +118,7 @@ public:
   NExpression &rhs;
   NBinaryExpression(NExpression &lhs, int op, NExpression &rhs)
       : lhs(lhs), rhs(rhs), op(op) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -126,7 +126,7 @@ class NBlock : public NExpression {
 public:
   NStatementList stmts;
   NBlock() {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -135,7 +135,7 @@ public:
   NIdentifier &lhs;
   NExpression &rhs;
   NAssignment(NIdentifier &lhs, NExpression &rhs) : lhs(lhs), rhs(rhs) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -146,7 +146,7 @@ public:
   NExpression &from;
   NExpression &to;
   NRead(NExpression &from, NExpression &to) : from(from), to(to) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -155,15 +155,15 @@ public:
   NExpression &exp;
   NExpression &to;
   NWrite(NExpression &exp, NExpression &to) : exp(exp), to(to) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
-class NReturn : public NStatement {
+class NReturnStatement : public NStatement {
 public:
   NExpression &exp;
-  NReturn(NExpression &exp) : exp(exp) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  NReturnStatement(NExpression &exp) : exp(exp) {}
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -171,7 +171,7 @@ class NExpressionStatement : public NStatement {
 public:
   NExpression &exp;
   NExpressionStatement(NExpression &exp) : exp(exp) {}
-  // virtual llvm::Value *codeGen(CodeGenContext &context);
+  virtual llvm::Value *code_generate(CodeGenContext &context);
   virtual void print(std::ostream &) const;
 };
 
@@ -186,7 +186,7 @@ public:
   }
   NVariableDeclaration(NIdentifier &type, NIdentifier &lhs, NExpression *rhs)
       : type(type), lhs(lhs), rhs(rhs) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -194,7 +194,7 @@ class NElseStatement : public NStatement {
 public:
   NBlock &block;
   NElseStatement(NBlock &block) : block(block) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -204,7 +204,7 @@ public:
   NBlock &block;
   NUntilStatement(NExpression &cond, NBlock &block)
       : cond(cond), block(block) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -214,7 +214,7 @@ public:
   NBlock &block;
   NWhileStatement(NExpression &cond, NBlock &block)
       : cond(cond), block(block) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -228,7 +228,7 @@ public:
   }
   NIfStatement(NExpression &cond, NBlock &block, NStatement *els)
       : cond(cond), block(block), els(els) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 
@@ -243,7 +243,7 @@ public:
   NFunctionDeclaration(NIdentifier &type, NIdentifier &id, NVariableList args,
                        NBlock &block)
       : type(type), id(id), args(args), block(block) {}
-  // virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
 

@@ -75,7 +75,7 @@ stmt : var_decl
      | io_stmt
      | expr { $$ = new NExpressionStatement(*$1); }
      | identifier TIS expr TPERIOD  { $$ = new NAssignment(*$1, *$3); }
-     | TRETURN expr TPERIOD { $$ = new NReturn(*$2); }
+     | TRETURN expr TPERIOD { $$ = new NReturnStatement(*$2); }
      ;
 
 func_call_args : TWITH expr

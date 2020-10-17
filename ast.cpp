@@ -55,7 +55,7 @@ void NFloat::print(std::ostream &out) const {
 }
 
 void NFunctionCall::print(std::ostream &out) const {
-  out << '\n' << indt.indent() << "func_call { id: " << func;
+  out << '\n' << indt.indent() << "func_call { id: " << id;
   if (args.size()) {
     out << ", args: { " << '\n';
     indt.inc(2);
@@ -138,7 +138,7 @@ void NWrite::print(std::ostream &out) const {
   out << indt.indent() << "write { exp: " << exp << ", to: " << to << " }" << '\n';
 }
 
-void NReturn::print(std::ostream &out) const {
+void NReturnStatement::print(std::ostream &out) const {
   out << indt.indent() << "return { exp: " << exp << " }" << '\n';
 }
 

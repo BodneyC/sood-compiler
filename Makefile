@@ -9,7 +9,7 @@ LIBS       = `$(LLVMCONFIG) --libs`
 
 XFLAGS = $(if $(DEBUG),-g,)
 
-OBJS = parser.o tokens.o ast.o
+OBJS = parser.o tokens.o ast.o codegen.o
 OBJS += $(if $(MAIN),$(MAIN),main.o)
 
 parser.cpp: parser.y
