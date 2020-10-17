@@ -6,6 +6,7 @@ compile_commands.json
 CMakeCache.txt
 CMakeFiles
 .clangd
+*.ast
 
 # Dumps
 *.log
@@ -19,6 +20,4 @@ parser.hpp
 *.o
 parser
 *.bak
-bin
-*.ast
 sood
