@@ -31,7 +31,7 @@ void CodeGenContext::code_generate(NBlock &root) {
 }
 
 /* Executes the AST by running the main function */
-llvm::GenericValue CodeGenContext::run_code() {
+llvm::GenericValue CodeGenContext::code_run() {
   llvm::ExecutionEngine *engine =
       llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).create();
   engine->finalizeObject();

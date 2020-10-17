@@ -1,0 +1,74 @@
+block {
+  var_decl { type: ident(integer), lhs: ident(zero), rhs: int(0) }
+
+  var_decl { type: ident(integer), lhs: ident(one), rhs: int(1) }
+
+  var_decl { type: ident(integer), lhs: ident(three), rhs: int(3) }
+
+  var_decl { type: ident(integer), lhs: ident(five), rhs: int(5) }
+
+  var_decl { type: ident(integer), lhs: ident(number_of_repetitions), rhs: int(10) }
+
+  func_decl { type: ident(string), name: ident(fizz_buzz), args: { 
+      var_decl { type: ident(integer), lhs: ident(num) }
+    }, 
+    block {
+      if { cond: 
+          binary_expression { lhs: 
+          binary_expression { lhs: 
+          binary_expression { lhs: 
+          binary_expression { lhs: ident(num), op: 12, rhs: ident(three) }
+, op: 0, rhs: ident(zero) }
+, op: 13, rhs: 
+              binary_expression { lhs: ident(num), op: 12, rhs: ident(five) }
+ }
+, op: 0, rhs: ident(zero) }
+,
+        block {
+          return { exp: str(FizzBuzz) }
+        }
+      }
+      if { cond: 
+          binary_expression { lhs: 
+          binary_expression { lhs: ident(num), op: 12, rhs: ident(three) }
+, op: 0, rhs: ident(zero) }
+,
+        block {
+          return { exp: str(Fizz) }
+        }
+      }
+      if { cond: 
+          binary_expression { lhs: 
+          binary_expression { lhs: ident(num), op: 12, rhs: ident(five) }
+, op: 0, rhs: ident(zero) }
+,
+        block {
+          return { exp: str(Buzz) }
+        }
+      }
+      var_decl { type: ident(string), lhs: ident(num_str), rhs: ident(num) }
+
+      return { exp: ident(num_str) }
+    }
+  }
+
+  var_decl { type: ident(integer), lhs: ident(counter), rhs: ident(zero) }
+
+  while { cond: 
+      binary_expression { lhs: ident(counter), op: 2, rhs: ident(number_of_repetitions) }
+,
+    block {
+      assignment { lhs: ident(output), rhs: 
+        func_call { id: ident(fizz_buzz), args: { 
+            ident(counter), } }
+      }
+
+      write { exp: ident(output), to: ident(stdout) }
+
+      assignment { lhs: ident(counter), rhs: 
+        binary_expression { lhs: ident(counter), op: 8, rhs: ident(one) }
+      }
+    }
+  }
+}
+

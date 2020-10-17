@@ -1,6 +1,11 @@
 # Development
 tests/.vim
 compile_commands.json
+*.cmake
+*cache*
+CMakeCache.txt
+CMakeFiles
+.clangd
 
 # Dumps
 *.log
@@ -14,3 +19,6 @@ parser.hpp
 *.o
 parser
 *.bak
+bin
+*.ast
+sood

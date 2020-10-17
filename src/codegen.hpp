@@ -50,7 +50,7 @@ public:
   }
 
   void code_generate(NBlock &root);
-  llvm::GenericValue run_code();
+  llvm::GenericValue code_run();
   llvm::Value *get_local(std::string s) { return blocks.top()->locals[s]; }
   void set_local(std::string s, llvm::Value *val) {
     blocks.top()->locals[s] = val;
@@ -72,5 +72,7 @@ public:
   void set_return_value(llvm::Value *value) { blocks.top()->ret_val = value; }
   llvm::Value *get_return_value() { return blocks.top()->ret_val; }
 };
+
+void create_core_fns(CodeGenContext &);
 
 #endif
