@@ -1,13 +1,18 @@
 # vim: ft=sood
 
-b is a string of value 'Hello'. # fully qualified
-b is a string of value 'He\t\tllo'. # escape chars
-b is a string of value 'this
-    is a multi
-    line string'.
-b is b is more than 5. # Boolean
-b is 5. # numeric
+b is an integer. # Zero initialized
+# b is a string of value 'Hello'. # fully qualified
+# b is a string of value 'He\t\tllo'. # escape chars
+# b is a string of value 'this
+#     is a multi
+#     line string'.
+# b is b is more than 5. # Boolean
+# b is 1 plus 2.
+# b is 1 plus 2.0.
+# b is 1 is more than 2.
+b is 1 is more than 2.0.
+# b is 5. # numeric
 
-b is c called...
-b is c called with: this, that, and another...
-b is c called with: this, 2, and 'a string'...
+# b is c called...
+# b is c called with: this, that, and another...
+# b is c called with: this, 2, and 'a string'...

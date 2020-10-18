@@ -141,7 +141,7 @@ block : TCOMMA stmts TPERIOD TPERIOD { $$ = $2; } /* stmts creates a new block *
 var_decl : identifier TIS TAN identifier TOFVALUE expr TPERIOD
            { $$ = new NVariableDeclaration(*$4, *$1, $6); }
          | identifier TIS TAN identifier TPERIOD 
-           { $$ = new NVariableDeclaration(*$1, *$4); }
+           { $$ = new NVariableDeclaration(*$4, *$1); }
          ;
 
 func_decl_arg : TAN identifier identifier

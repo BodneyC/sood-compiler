@@ -3,6 +3,7 @@
 
 #include <stack>
 #include <typeinfo>
+#include <iostream>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
@@ -19,6 +20,7 @@
 #include <llvm/IR/Type.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/IR/Verifier.h>
 
 struct CodeGenException : public std::exception {
   std::string message = "Generic code generation exception";
@@ -29,8 +31,8 @@ struct CodeGenException : public std::exception {
 
 class NBlock;
 
-static llvm::LLVMContext LLVM_CTX;
-static llvm::IRBuilder<> BUILDER(LLVM_CTX);
+extern llvm::LLVMContext LLVM_CTX;
+extern llvm::IRBuilder<> BUILDER;
 
 class CodeGenBlock {
 public:
@@ -41,15 +43,17 @@ public:
 
 class CodeGenContext {
   std::stack<CodeGenBlock *> blocks;
-  llvm::Function *f_main;
+  llvm::Function *fn_main;
 
 public:
   llvm::Module *module;
-  CodeGenContext(std::string module_name = "main") {
+  CodeGenContext(std::string module_name = "mod_main") {
     module = new llvm::Module(module_name, LLVM_CTX);
   }
 
   void code_generate(NBlock &root);
+  void print_llvm_ir();
+  void print_llvm_ir_to_file(std::string &);
   llvm::GenericValue code_run();
   llvm::Value *get_local(std::string s) { return blocks.top()->locals[s]; }
   void set_local(std::string s, llvm::Value *val) {
