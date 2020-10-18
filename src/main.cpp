@@ -110,6 +110,7 @@ int main(int argc, char **argv) {
   CodeGenContext ctx;
   // create_core_fns(ctx);
   ctx.code_generate(*prg);
+  ctx.verify_module();
 
   if (args.print_llvm_ir)
     ctx.print_llvm_ir();

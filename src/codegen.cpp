@@ -23,7 +23,7 @@ void CodeGenContext::code_generate(NBlock &root) {
       llvm::Type::getVoidTy(LLVM_CTX), makeArrayRef(arg_types), false);
 
   fn_main = llvm::Function::Create(fn_type, llvm::GlobalValue::InternalLinkage,
-                                   "fn_main", module);
+                                   "main", module);
   llvm::BasicBlock *_block =
       llvm::BasicBlock::Create(LLVM_CTX, "entry", fn_main, 0);
 
@@ -34,7 +34,9 @@ void CodeGenContext::code_generate(NBlock &root) {
   BUILDER.CreateRet(nullptr); // return `void`
 
   pop_block();
+}
 
+void CodeGenContext::verify_module() {
   std::cout << "\nModule verification:\n" << std::endl;
   llvm::verifyModule(*module, &llvm::outs());
   std::cout << '\n' << std::endl;
@@ -44,7 +46,8 @@ void CodeGenContext::print_llvm_ir() { module->print(llvm::outs(), nullptr); }
 
 void CodeGenContext::print_llvm_ir_to_file(std::string &filename) {
   std::error_code ec;
-  llvm::raw_fd_ostream *ost = new llvm::raw_fd_ostream(filename, ec, llvm::sys::fs::F_None);
+  llvm::raw_fd_ostream *ost =
+      new llvm::raw_fd_ostream(filename, ec, llvm::sys::fs::F_None);
   module->print(*ost, nullptr);
   delete ost;
 }
@@ -73,12 +76,10 @@ static llvm::Type *type_of(const NIdentifier &type) {
 /* -------- Types  -------- */
 
 llvm::Value *NInteger::code_generate(CodeGenContext &ctx) {
-  std::cout << "IS AN INTEGER" << std::endl;
   return llvm::ConstantInt::get(llvm::Type::getInt64Ty(LLVM_CTX), val, true);
 }
 
 llvm::Value *NFloat::code_generate(CodeGenContext &ctx) {
-  std::cout << "IS A FLOAT" << std::endl;
   return llvm::ConstantFP::get(llvm::Type::getDoubleTy(LLVM_CTX), val);
 }
 
@@ -220,10 +221,7 @@ llvm::Value *NWrite::code_generate(CodeGenContext &ctx) {
 }
 
 llvm::Value *NReturnStatement::code_generate(CodeGenContext &ctx) {
-  llvm::Value *_ret = ctx.get_return_value();
-  if (!_ret)
-    throw CodeGenException("Return value not exprection for current function");
-  return BUILDER.CreateStore(exp.code_generate(ctx), _ret);
+  return BUILDER.CreateRet(exp.code_generate(ctx));
 }
 
 llvm::Value *NExpressionStatement::code_generate(CodeGenContext &ctx) {
@@ -261,26 +259,23 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
   std::vector<llvm::Type *> arg_types;
   NVariableList::const_iterator it;
 
-  // For arrayRef
   for (it = args.begin(); it != args.end(); it++)
     arg_types.push_back(type_of((*it)->type));
 
-  llvm::FunctionType *fn_type = llvm::FunctionType::get(
+  llvm::FunctionType *_fn_type = llvm::FunctionType::get(
       type_of(type), llvm::makeArrayRef(arg_types), false);
 
-  llvm::Function *fn = llvm::Function::Create(
-      fn_type, llvm::GlobalValue::InternalLinkage, id.val.c_str(), ctx.module);
+  llvm::Function *_fn = llvm::Function::Create(
+      _fn_type, llvm::GlobalValue::InternalLinkage, id.val.c_str(), ctx.module);
 
   llvm::BasicBlock *_block =
-      llvm::BasicBlock::Create(LLVM_CTX, id.val + "__entry", fn, 0);
+      llvm::BasicBlock::Create(LLVM_CTX, id.val + "__entry", _fn, 0);
 
   ctx.push_block(_block);
 
   BUILDER.SetInsertPoint(_block);
-  llvm::Value *ret_val = BUILDER.CreateAlloca(fn_type, 0, id.val + "__ret_val");
-  ctx.set_return_value(ret_val);
 
-  llvm::Function::arg_iterator arg_it = fn->arg_begin();
+  llvm::Function::arg_iterator arg_it = _fn->arg_begin();
   for (it = args.begin(); it != args.end(); it++) {
     (*it)->code_generate(ctx);
     llvm::Value *_arg_value = &*arg_it++;
@@ -289,13 +284,9 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
 
   block.code_generate(ctx);
 
-  BUILDER.CreateRet(ret_val);
-
   ctx.pop_block();
 
-  // llvm::verifyFunction(*fn, &llvm::outs());
-
-  return fn;
+  return _fn;
 }
 
 llvm::Value *NFunctionCall::code_generate(CodeGenContext &ctx) {

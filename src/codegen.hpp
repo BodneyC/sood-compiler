@@ -54,6 +54,7 @@ public:
   void code_generate(NBlock &root);
   void print_llvm_ir();
   void print_llvm_ir_to_file(std::string &);
+  void verify_module();
   llvm::GenericValue code_run();
   llvm::Value *get_local(std::string s) { return blocks.top()->locals[s]; }
   void set_local(std::string s, llvm::Value *val) {

@@ -5,13 +5,15 @@
 #   pete is an integer of value 1.
 #   return pete...
 
-g is an integer of value 666 .
+# g is an integer of value 666 .
 
 # c called..
 
-# # Function declaration - args
-# c is a function of type integer with arguments of: an integer e; and of statements,
-#   pete is pete plus six...
+# Function declaration - args
+d is a function of type integer with arguments of: an integer e; and of statements,
+  pete is an integer of value 1.
+  pete is pete plus 6.
+  return e...
 
 # # Function declaration - split line
 # c is a function of type integer with arguments of:
