@@ -20,4 +20,4 @@ parser.hpp
 *.o
 parser
 *.bak
-sood
+src/sood

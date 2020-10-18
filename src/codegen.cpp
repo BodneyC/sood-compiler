@@ -197,11 +197,8 @@ llvm::Value *NBinaryExpression::code_generate(CodeGenContext &ctx) {
 llvm::Value *NBlock::code_generate(CodeGenContext &ctx) {
   llvm::Value *last = nullptr;
   NStatementList::const_iterator it;
-  llvm::BasicBlock *_current_block = BUILDER.GetInsertBlock();
-  for (it = stmts.begin(); it != stmts.end(); it++) {
+  for (it = stmts.begin(); it != stmts.end(); it++)
     last = (*it)->code_generate(ctx);
-    BUILDER.SetInsertPoint(_current_block);
-  }
   return last;
 }
 
@@ -256,6 +253,9 @@ llvm::Value *NVariableDeclaration::code_generate(CodeGenContext &ctx) {
 }
 
 llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
+
+  llvm::BasicBlock *_current_block = BUILDER.GetInsertBlock();
+
   std::vector<llvm::Type *> arg_types;
   NVariableList::const_iterator it;
 
@@ -285,6 +285,8 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
   block.code_generate(ctx);
 
   ctx.pop_block();
+
+  BUILDER.SetInsertPoint(_current_block);
 
   return _fn;
 }
@@ -327,33 +329,24 @@ llvm::Value *NIfStatement::code_generate(CodeGenContext &ctx) {
   llvm::Value *_then_val = block.code_generate(ctx);
   if (!_then_val)
     throw CodeGenException("Could not generate `then` block");
-
-  // Setup `after-if` cont. point
   BUILDER.CreateBr(_aftr);
-  _then = BUILDER.GetInsertBlock();
 
   // Emit `else` block
-  _fn->getBasicBlockList().push_back(_else);
-
   BUILDER.SetInsertPoint(_else);
-  llvm::Value *_els_val = nullptr;
-  if (els) {
-    _els_val = els->code_generate(ctx);
-    if (!_els_val)
-      throw CodeGenException("`else` block exists but generated no code");
-  }
-
+  _fn->getBasicBlockList().push_back(_else);
+  if (els)
+    els->code_generate(ctx);
   BUILDER.CreateBr(_aftr);
-  _else = BUILDER.GetInsertBlock();
 
-  _fn->getBasicBlockList().push_back(_aftr);
   BUILDER.SetInsertPoint(_aftr);
-  llvm::PHINode *phi =
-      BUILDER.CreatePHI(llvm::Type::getDoubleTy(LLVM_CTX), 2, "if_phi_tmp");
+  _fn->getBasicBlockList().push_back(_aftr);
+  // BUILDER.SetInsertPoint(_aftr);
+  // llvm::PHINode *phi =
+  //     BUILDER.CreatePHI(llvm::Type::getDoubleTy(LLVM_CTX), 2, "if_phi_tmp");
 
-  phi->addIncoming(_then_val, _then);
-  phi->addIncoming(_els_val, _else);
-  return phi;
+  // phi->addIncoming(_then_val, _then);
+  // phi->addIncoming(_els_val, _else);
+  return nullptr;
 }
 
 llvm::Value *NElseStatement::code_generate(CodeGenContext &ctx) {
