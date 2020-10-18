@@ -49,8 +49,7 @@ SoodArgs parse_args(int argc, char **argv) {
     ("o,output",          "Output file name",
      cxxopts::value<std::string>()->default_value("a.sood.out"))
     ("positional",        "Arguments entered without an option",
-     cxxopts::value<std::vector<std::string>>())
-    ;
+     cxxopts::value<std::vector<std::string>>());
   opts.parse_positional({"input", "output", "positional"});
   auto res = opts.parse(argc, argv);
   if (res.count("help")) {
@@ -65,19 +64,17 @@ SoodArgs parse_args(int argc, char **argv) {
     .set_output(res.count("output") ? res["output"].as<std::string>() : "")
     .set_stop_after_ast(res["stop-after-ast"].as<bool>())
     .set_stop_after_llvm_ir(res["stop-after-llvm-ir"].as<bool>())
-    .set_ast_out(
-        res.count("write-ast-to-file") ?
-          res.count("input") ?
-            res["input"].as<std::string>() + ".ast" :
-            "a.sood.ast" :
-          ""
+    .set_ast_out(res.count("write-ast-to-file") ?
+      res.count("input") ?
+        res["input"].as<std::string>() + ".ast" :
+        "a.sood.ast" :
+      ""
     )
-    .set_llvm_ir_out(
-        res.count("write-llvm-ir-to-file") ?
-          res.count("input") ?
-            res["input"].as<std::string>() + ".ll" :
-            "a.sood.ll" :
-          ""
+    .set_llvm_ir_out(res.count("write-llvm-ir-to-file") ?
+      res.count("input") ?
+        res["input"].as<std::string>() + ".ll" :
+        "a.sood.ll" :
+      ""
     );
 }
 

@@ -60,7 +60,7 @@ an?                        return TAN;
 "from"                     return TFROM;
 
 [a-zA-Z_][a-zA-Z0-9_]*     SAVE_TOKEN; return TIDENT;
-[0-9]+.[0-9]+              SAVE_TOKEN; return TFLOAT;
+[0-9]+\.[0-9]+             SAVE_TOKEN; return TFLOAT;
 [0-9]+                     SAVE_TOKEN; return TINTEGER;
 ["][^"]*["]                SAVE_TOKEN; return TSTRING;
 ['][^']*[']                SAVE_TOKEN; return TSTRING;

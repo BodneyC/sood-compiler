@@ -73,10 +73,12 @@ static llvm::Type *type_of(const NIdentifier &type) {
 /* -------- Types  -------- */
 
 llvm::Value *NInteger::code_generate(CodeGenContext &ctx) {
+  std::cout << "IS AN INTEGER" << std::endl;
   return llvm::ConstantInt::get(llvm::Type::getInt64Ty(LLVM_CTX), val, true);
 }
 
 llvm::Value *NFloat::code_generate(CodeGenContext &ctx) {
+  std::cout << "IS A FLOAT" << std::endl;
   return llvm::ConstantFP::get(llvm::Type::getDoubleTy(LLVM_CTX), val);
 }
 
@@ -194,9 +196,10 @@ llvm::Value *NBinaryExpression::code_generate(CodeGenContext &ctx) {
 llvm::Value *NBlock::code_generate(CodeGenContext &ctx) {
   llvm::Value *last = nullptr;
   NStatementList::const_iterator it;
+  llvm::BasicBlock *_current_block = BUILDER.GetInsertBlock();
   for (it = stmts.begin(); it != stmts.end(); it++) {
-    // std::cout << (*it) << std::endl;
     last = (*it)->code_generate(ctx);
+    BUILDER.SetInsertPoint(_current_block);
   }
   return last;
 }
@@ -273,10 +276,9 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
 
   ctx.push_block(_block);
 
+  BUILDER.SetInsertPoint(_block);
   llvm::Value *ret_val = BUILDER.CreateAlloca(fn_type, 0, id.val + "__ret_val");
   ctx.set_return_value(ret_val);
-
-  BUILDER.SetInsertPoint(_block);
 
   llvm::Function::arg_iterator arg_it = fn->arg_begin();
   for (it = args.begin(); it != args.end(); it++) {
@@ -291,7 +293,7 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
 
   ctx.pop_block();
 
-  llvm::verifyFunction(*fn, &llvm::outs());
+  // llvm::verifyFunction(*fn, &llvm::outs());
 
   return fn;
 }
