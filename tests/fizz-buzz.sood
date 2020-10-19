@@ -1,25 +1,39 @@
 # vim: ft=sood
 
-zero  is an integer of value 0.
-one   is an integer of value 1.
-three is an integer of value 3.
-five  is an integer of value 5.
+# zero  is an integer of value 0.
+# one   is an integer of value 1.
+# three is an integer of value 3.
+# five  is an integer of value 5.
 
-number_of_repetitions is an integer of value 10.
+number_of_repetitions is an integer of value 15.
 
 fizz_buzz is a function of type string with arguments of:
       an integer num; and of statements,
-  if num modulo three is equal to zero also num modulo five is equal to zero,
+  if (num modulo 3 is equal to 0) also (num modulo 5 is equal to 0),
     return 'FizzBuzz'...
-  if num modulo three is equal to zero,
+  if num modulo 3 is equal to 0,
     return 'Fizz'...
-  if num modulo five is equal to zero,
+  if num modulo 5 is equal to 0,
     return 'Buzz'...
-  num_str is a string of value num.
-  return num_str...
+  # TODO: `write as <string>`
+  # neither is a string of value num.
+  return ''...
 
-counter is an integer of value zero.
-while counter is less than number_of_repetitions,
+# write 'muffins' to stdout.
+
+output is a string of value ''.
+counter is an integer of value 0.
+while counter is less than or equal to number_of_repetitions,
   output is fizz_buzz called with: counter...
+  write counter to stdout.
+  write ': ' to stdout.
+  # TODO: String equality
   write output to stdout.
-  counter is counter plus one...
+  # if output is equal to '',
+  #   write counter to stdout...
+  # else,
+  #   write output to stdout...
+  write '\n' to stdout.
+  counter is counter plus 1...
+
+# write '\n' to stdout.

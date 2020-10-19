@@ -14,6 +14,7 @@ extern NBlock *prg;
 
 struct SoodArgs {
   bool debug;
+  bool no_verify;
   bool print_ast;
   bool print_llvm_ir;
   bool stop_after_ast;
@@ -23,6 +24,7 @@ struct SoodArgs {
   std::string ast_out;
   std::string llvm_ir_out;
   SoodArgs set_debug(bool b) { debug = b; return *this; }
+  SoodArgs set_no_verify(bool b) { no_verify = b; return *this; }
   SoodArgs set_print_ast(bool b) { print_ast = b; return *this; }
   SoodArgs set_print_llvm_ir(bool b) { print_llvm_ir = b; return *this; }
   SoodArgs set_stop_after_ast(bool b) { stop_after_ast = b; return *this; }
@@ -38,6 +40,7 @@ SoodArgs parse_args(int argc, char **argv) {
   opts.add_options()
     ("h,help",                  "Show this help message")
     ("d,debug",                 "Enable debugging")
+    ("N,no-verify",             "Disable LLVM verification")
     ("a,print-ast",             "Print generated AST to stdout")
     ("l,print-llvm-ir",         "Print generated LLVM IR to stdout")
     ("S,stop-after-ast",        "Stop after generating the AST")
@@ -58,6 +61,7 @@ SoodArgs parse_args(int argc, char **argv) {
   }
   return SoodArgs()
     .set_debug(res["debug"].as<bool>())
+    .set_no_verify(res["no-verify"].as<bool>())
     .set_print_ast(res["print-ast"].as<bool>())
     .set_print_llvm_ir(res["print-llvm-ir"].as<bool>())
     .set_input(res.count("input") ? res["input"].as<std::string>() : "")
@@ -109,7 +113,9 @@ int main(int argc, char **argv) {
 
   CodeGenContext ctx;
   ctx.code_generate(*prg);
-  ctx.verify_module();
+
+  if(!args.no_verify)
+    ctx.verify_module();
 
   if (args.print_llvm_ir)
     ctx.print_llvm_ir();

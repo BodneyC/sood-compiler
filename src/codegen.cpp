@@ -1,10 +1,20 @@
-// `ast.hpp` must be before `parser.hpp`...
+/**
+ * Note:
+ * - `ast.hpp` must be before `parser.hpp`...
+ *
+ * Todo:
+ * - Cleanup `get_current_block` functions and the like, use `BUILDER`
+ */
 #include "codegen.hpp"
 #include "ast.hpp"
 #include "parser.hpp"
 
 llvm::LLVMContext LLVM_CTX;
 llvm::IRBuilder<> BUILDER(LLVM_CTX);
+
+llvm::Type *DOUBLE_TYPE = llvm::Type::getDoubleTy(LLVM_CTX);
+llvm::Type *STRING_TYPE = llvm::Type::getInt8PtrTy(LLVM_CTX);
+llvm::Type *INTEGER_TYPE = llvm::Type::getInt64Ty(LLVM_CTX);
 
 llvm::Value *E_LOG_V(const char *str) {
   std::cerr << "E_LOG_V: " << str << std::endl;
@@ -119,7 +129,7 @@ void replace_all(std::string &input, const std::string &from,
   }
 }
 
-void process_escape_chars(std::string &input){
+void process_escape_chars(std::string &input) {
   replace_all(input, "\\n", "\n");
   replace_all(input, "\\r", "\r");
   replace_all(input, "\\t", "\t");
@@ -132,9 +142,11 @@ llvm::Value *NString::code_generate(CodeGenContext &ctx) {
 
 llvm::Value *NIdentifier::code_generate(CodeGenContext &ctx) {
   if (ctx.locals().find(val) == ctx.locals().end()) {
-    return nullptr;
+    std::string msg = "Identifier " + val + " not found in current context";
+    return E_LOG_V(msg.c_str());
   }
-  return new llvm::LoadInst(ctx.locals()[val], "", false, ctx.current_block());
+  return new llvm::LoadInst(ctx.locals()[val], "", false,
+                            BUILDER.GetInsertBlock());
 }
 
 /* ----- Operative expressions ------ */
@@ -143,7 +155,7 @@ llvm::Value *NUnaryExpression::code_generate(CodeGenContext &ctx) {
   llvm::Value *_rhs = rhs.code_generate(ctx);
 
   if (!_rhs)
-    return nullptr;
+    return E_LOG_V("Couldn't generate IR for RHS");
 
   switch (op) {
   case TNOT:
@@ -250,23 +262,22 @@ llvm::Value *NAssignment::code_generate(CodeGenContext &ctx) {
   if (!_lhs)
     throw CodeGenException("Variable " + lhs.val +
                            " not defined in current block");
+  llvm::Value *_rhs = rhs.code_generate(ctx);
+  // TODO: if (_lhs->getType() == STRING_TYPE && _rhs->getType() != STRING_TYPE)
   return BUILDER.CreateStore(rhs.code_generate(ctx), _lhs);
 }
 
 // Doing nothing `to` at the minute, all to stdout
 llvm::Value *NWrite::code_generate(CodeGenContext &ctx) {
-  llvm::Type *double_type = llvm::Type::getDoubleTy(LLVM_CTX);
-  llvm::Type *integer_type = llvm::Type::getInt64Ty(LLVM_CTX);
-  llvm::Type *string_type = llvm::Type::getInt8PtrTy(LLVM_CTX);
   // Todo: Something for `string_type`
   llvm::Value *_exp = exp.code_generate(ctx);
   llvm::Type *_exp_type = _exp->getType();
-  if (_exp_type == double_type || _exp_type == integer_type) {
+  if (_exp_type == DOUBLE_TYPE || _exp_type == INTEGER_TYPE) {
     llvm::SmallVector<llvm::Value *, 2> printf_args;
     printf_args.push_back(ctx.fmt_specifiers.at("numeric"));
     printf_args.push_back(_exp);
     return BUILDER.CreateCall(ctx.printf_function, printf_args);
-  } else if (_exp_type == string_type) {
+  } else if (_exp_type == STRING_TYPE) {
     llvm::SmallVector<llvm::Value *, 2> printf_args;
     printf_args.push_back(ctx.fmt_specifiers.at("string"));
     printf_args.push_back(_exp);
@@ -293,15 +304,12 @@ llvm::Value *NExpressionStatement::code_generate(CodeGenContext &ctx) {
  * TODO: String -> ""
  */
 static llvm::Value *zero_value_for(llvm::Type *type) {
-  llvm::Type *double_type = llvm::Type::getDoubleTy(LLVM_CTX);
-  llvm::Type *integer_type = llvm::Type::getInt64Ty(LLVM_CTX);
-  llvm::Type *string_type = llvm::Type::getInt8PtrTy(LLVM_CTX);
-  if (type == double_type)
-    return llvm::ConstantFP::get(double_type, 0.0);
-  if (type == integer_type)
-    return llvm::ConstantInt::get(integer_type, 0, true);
-  if (type == string_type)
-    return nullptr;
+  if (type == DOUBLE_TYPE)
+    return llvm::ConstantFP::get(DOUBLE_TYPE, 0.0);
+  if (type == INTEGER_TYPE)
+    return llvm::ConstantInt::get(INTEGER_TYPE, 0, true);
+  if (type == STRING_TYPE)
+    return get_i8_str_ptr("", "str_init_val");
   return E_LOG_V("Unknown variable type");
 }
 
@@ -340,10 +348,15 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
   BUILDER.SetInsertPoint(_block);
 
   llvm::Function::arg_iterator arg_it = _fn->arg_begin();
+
   for (it = args.begin(); it != args.end(); it++) {
-    (*it)->code_generate(ctx);
-    llvm::Value *_arg_value = &*arg_it++;
+    // llvm::Value *arg_val = (*it)->code_generate(ctx);
+    llvm::Value *_arg_value = arg_it++;
     _arg_value->setName((*it)->lhs.val.c_str());
+    llvm::Value *_in_f_arg =
+        BUILDER.CreateAlloca(type_of((*it)->type), 0, (*it)->lhs.val);
+    BUILDER.CreateStore(_arg_value, _in_f_arg);
+    ctx.set_local((*it)->lhs.val, _in_f_arg);
   }
 
   block.code_generate(ctx);
@@ -365,9 +378,9 @@ llvm::Value *NFunctionCall::code_generate(CodeGenContext &ctx) {
 
   NExpressionList::const_iterator it;
   for (it = args.begin(); it != args.end(); it++)
-    _args.push_back((**it).code_generate(ctx));
+    _args.push_back((*it)->code_generate(ctx));
 
-  return BUILDER.CreateCall(fn, _args);
+  return BUILDER.CreateCall(fn, _args, "call_tmp");
 }
 
 /* ------ constructs ------ */
@@ -414,28 +427,30 @@ llvm::Value *NElseStatement::code_generate(CodeGenContext &ctx) {
 }
 
 llvm::Value *NWhileStatement::code_generate(CodeGenContext &ctx) {
+  llvm::Function *_fn = BUILDER.GetInsertBlock()->getParent();
+  llvm::BasicBlock *_while =
+      llvm::BasicBlock::Create(LLVM_CTX, "while_cond", _fn);
+  llvm::BasicBlock *_block =
+      llvm::BasicBlock::Create(LLVM_CTX, "while_block", _fn);
+  llvm::BasicBlock *_after =
+      llvm::BasicBlock::Create(LLVM_CTX, "while_aftr", _fn);
+
+  BUILDER.CreateBr(_while);
+  BUILDER.SetInsertPoint(_while);
   llvm::Value *_cond = cond.code_generate(ctx);
   if (!_cond)
     return E_LOG_V("Invalid condition");
   _cond = BUILDER.CreateICmpNE(_cond, BUILDER.getInt1(false), "while_cond");
+  BUILDER.CreateCondBr(_cond, _block, _after);
 
-  llvm::Function *_fn = BUILDER.GetInsertBlock()->getParent();
-  llvm::BasicBlock *_while =
-      llvm::BasicBlock::Create(LLVM_CTX, "while_block", _fn);
-
-  BUILDER.CreateBr(_while);
-  BUILDER.SetInsertPoint(_while);
-
+  BUILDER.SetInsertPoint(_block);
   if (!block.code_generate(ctx))
     return E_LOG_V("Invalid while block");
+  BUILDER.CreateBr(_while);
 
-  llvm::BasicBlock *_after =
-      llvm::BasicBlock::Create(LLVM_CTX, "while_cnt", _fn);
-
-  BUILDER.CreateCondBr(_cond, _while, _after);
   BUILDER.SetInsertPoint(_after);
 
-  return llvm::Constant::getNullValue(llvm::Type::getDoubleTy(LLVM_CTX));
+  return nullptr;
 }
 
 llvm::Value *NUntilStatement::code_generate(CodeGenContext &ctx) {
