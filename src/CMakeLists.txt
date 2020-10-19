@@ -6,7 +6,7 @@ ADD_FLEX_BISON_DEPENDENCY(lexer parser)
 set(SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/src/ast.cpp
   ${PROJECT_SOURCE_DIR}/src/lexer.cpp
-  ${PROJECT_SOURCE_DIR}/src/core-functions.cpp
+  # ${PROJECT_SOURCE_DIR}/src/core-functions.cpp
   ${PROJECT_SOURCE_DIR}/src/parser.cpp
   ${PROJECT_SOURCE_DIR}/src/codegen.cpp
 )

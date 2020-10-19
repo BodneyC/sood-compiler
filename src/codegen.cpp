@@ -16,6 +16,29 @@ llvm::Type *E_LOG_T(const char *str) {
   return nullptr;
 }
 
+llvm::Constant *get_i8_str_ptr(char const *str, llvm::Twine const &twine) {
+  return BUILDER.CreateGlobalStringPtr(str, twine);
+}
+
+CodeGenContext::CodeGenContext(std::string module_name) {
+  module = new llvm::Module(module_name, LLVM_CTX);
+  printf_function = create_fn_printf();
+}
+
+llvm::Function *CodeGenContext::create_fn_printf() {
+  std::vector<llvm::Type *> printf_arg_types;
+  printf_arg_types.push_back(llvm::Type::getInt8PtrTy(LLVM_CTX));
+
+  llvm::FunctionType *printf_type = llvm::FunctionType::get(
+      llvm::Type::getInt32Ty(LLVM_CTX), printf_arg_types, true);
+
+  llvm::Function *func =
+      llvm::Function::Create(printf_type, llvm::Function::ExternalLinkage,
+                             llvm::Twine("printf"), module);
+  func->setCallingConv(llvm::CallingConv::C);
+  return func;
+}
+
 void CodeGenContext::code_generate(NBlock &root) {
   std::vector<llvm::Type *> arg_types;
 
@@ -30,6 +53,10 @@ void CodeGenContext::code_generate(NBlock &root) {
   push_block(_block);
 
   BUILDER.SetInsertPoint(_block);
+
+  fmt_specifiers.insert({"numeric", get_i8_str_ptr("%d", "numeric_fmt_spc")});
+  fmt_specifiers.insert({"string", get_i8_str_ptr("%s", "string_fmt_spc")});
+
   root.code_generate(*this);  // emit bytecode for the toplevel block
   BUILDER.CreateRet(nullptr); // return `void`
 
@@ -37,9 +64,7 @@ void CodeGenContext::code_generate(NBlock &root) {
 }
 
 void CodeGenContext::verify_module() {
-  std::cout << "\nModule verification:\n" << std::endl;
   llvm::verifyModule(*module, &llvm::outs());
-  std::cout << '\n' << std::endl;
 }
 
 void CodeGenContext::print_llvm_ir() { module->print(llvm::outs(), nullptr); }
@@ -69,7 +94,7 @@ static llvm::Type *type_of(const NIdentifier &type) {
   if (type.val == "float")
     return llvm::Type::getDoubleTy(LLVM_CTX);
   if (type.val == "string")
-    return nullptr; // TODO: Work out string type
+    return llvm::Type::getInt8PtrTy(LLVM_CTX); // TODO: Work out string type
   return E_LOG_T("Unknown variable type");
 }
 
@@ -83,9 +108,26 @@ llvm::Value *NFloat::code_generate(CodeGenContext &ctx) {
   return llvm::ConstantFP::get(llvm::Type::getDoubleTy(LLVM_CTX), val);
 }
 
-// TODO:
+void replace_all(std::string &input, const std::string &from,
+                 const std::string &to) {
+  if (!from.empty()) {
+    size_t start_pos = 0;
+    while ((start_pos = input.find(from, start_pos)) != std::string::npos) {
+      input.replace(start_pos, from.length(), to);
+      start_pos += to.length();
+    }
+  }
+}
+
+void process_escape_chars(std::string &input){
+  replace_all(input, "\\n", "\n");
+  replace_all(input, "\\r", "\r");
+  replace_all(input, "\\t", "\t");
+}
+
 llvm::Value *NString::code_generate(CodeGenContext &ctx) {
-  return E_LOG_V("String not yet implemented");
+  process_escape_chars(val);
+  return get_i8_str_ptr(val.c_str(), "l_str");
 }
 
 llvm::Value *NIdentifier::code_generate(CodeGenContext &ctx) {
@@ -197,8 +239,9 @@ llvm::Value *NBinaryExpression::code_generate(CodeGenContext &ctx) {
 llvm::Value *NBlock::code_generate(CodeGenContext &ctx) {
   llvm::Value *last = nullptr;
   NStatementList::const_iterator it;
-  for (it = stmts.begin(); it != stmts.end(); it++)
+  for (it = stmts.begin(); it != stmts.end(); it++) {
     last = (*it)->code_generate(ctx);
+  }
   return last;
 }
 
@@ -210,11 +253,30 @@ llvm::Value *NAssignment::code_generate(CodeGenContext &ctx) {
   return BUILDER.CreateStore(rhs.code_generate(ctx), _lhs);
 }
 
+// Doing nothing `to` at the minute, all to stdout
+llvm::Value *NWrite::code_generate(CodeGenContext &ctx) {
+  llvm::Type *double_type = llvm::Type::getDoubleTy(LLVM_CTX);
+  llvm::Type *integer_type = llvm::Type::getInt64Ty(LLVM_CTX);
+  llvm::Type *string_type = llvm::Type::getInt8PtrTy(LLVM_CTX);
+  // Todo: Something for `string_type`
+  llvm::Value *_exp = exp.code_generate(ctx);
+  llvm::Type *_exp_type = _exp->getType();
+  if (_exp_type == double_type || _exp_type == integer_type) {
+    llvm::SmallVector<llvm::Value *, 2> printf_args;
+    printf_args.push_back(ctx.fmt_specifiers.at("numeric"));
+    printf_args.push_back(_exp);
+    return BUILDER.CreateCall(ctx.printf_function, printf_args);
+  } else if (_exp_type == string_type) {
+    llvm::SmallVector<llvm::Value *, 2> printf_args;
+    printf_args.push_back(ctx.fmt_specifiers.at("string"));
+    printf_args.push_back(_exp);
+    return BUILDER.CreateCall(ctx.printf_function, printf_args);
+  }
+  return E_LOG_V("Write not yet implemented");
+}
+
 llvm::Value *NRead::code_generate(CodeGenContext &ctx) {
   return E_LOG_V("Read not yet implemented");
-}
-llvm::Value *NWrite::code_generate(CodeGenContext &ctx) {
-  return E_LOG_V("Write not yet implemented");
 }
 
 llvm::Value *NReturnStatement::code_generate(CodeGenContext &ctx) {
@@ -233,11 +295,13 @@ llvm::Value *NExpressionStatement::code_generate(CodeGenContext &ctx) {
 static llvm::Value *zero_value_for(llvm::Type *type) {
   llvm::Type *double_type = llvm::Type::getDoubleTy(LLVM_CTX);
   llvm::Type *integer_type = llvm::Type::getInt64Ty(LLVM_CTX);
+  llvm::Type *string_type = llvm::Type::getInt8PtrTy(LLVM_CTX);
   if (type == double_type)
     return llvm::ConstantFP::get(double_type, 0.0);
   if (type == integer_type)
     return llvm::ConstantInt::get(integer_type, 0, true);
-  // if (type == string)...
+  if (type == string_type)
+    return nullptr;
   return E_LOG_V("Unknown variable type");
 }
 
@@ -340,12 +404,8 @@ llvm::Value *NIfStatement::code_generate(CodeGenContext &ctx) {
 
   BUILDER.SetInsertPoint(_aftr);
   _fn->getBasicBlockList().push_back(_aftr);
-  // BUILDER.SetInsertPoint(_aftr);
-  // llvm::PHINode *phi =
-  //     BUILDER.CreatePHI(llvm::Type::getDoubleTy(LLVM_CTX), 2, "if_phi_tmp");
 
-  // phi->addIncoming(_then_val, _then);
-  // phi->addIncoming(_els_val, _else);
+  // NOTE: Nothing specific to return and handles block movement internally
   return nullptr;
 }
 

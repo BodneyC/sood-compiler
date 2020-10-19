@@ -1,7 +1,27 @@
 # vim: ft=sood
 
-b is b plus b.
-b is b minus b.
-b is b multiplied by b.
-b is b divided by b.
-b is b modulo b.
+b is an integer of value 10.
+
+# b is b plus b.
+# b is b minus b.
+# b is b multiplied by b.
+# b is b divided by b.
+# b is b modulo b.
+
+# c is a string of value 'hello'.
+
+# write b to stdout.
+# write b to stdout.
+# write b to stdout.
+# write b to stdout.
+
+b is b plus 2.
+
+if b is more than 5,
+  write 'More\n' to stdout...
+else,
+  write 'Less\n' to stdout...
+
+# write b to stdout.
+# write 10 plus 5 to stdout.
+# write 'Hello world' to stdout.

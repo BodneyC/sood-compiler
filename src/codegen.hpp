@@ -1,15 +1,15 @@
 #ifndef __CODE_GEN_HPP__
 #define __CODE_GEN_HPP__
 
+#include <iostream>
 #include <stack>
 #include <typeinfo>
-#include <iostream>
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/ExecutionEngine/MCJIT.h>
+// #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/IR/CallingConv.h>
-#include <llvm/IR/DerivedTypes.h>
+// #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/IRPrintingPasses.h>
@@ -18,9 +18,9 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
+#include <llvm/IR/Verifier.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
-#include <llvm/IR/Verifier.h>
 
 struct CodeGenException : public std::exception {
   std::string message = "Generic code generation exception";
@@ -30,6 +30,7 @@ struct CodeGenException : public std::exception {
 };
 
 class NBlock;
+class CodeGenContext;
 
 extern llvm::LLVMContext LLVM_CTX;
 extern llvm::IRBuilder<> BUILDER;
@@ -44,12 +45,14 @@ public:
 class CodeGenContext {
   std::stack<CodeGenBlock *> blocks;
   llvm::Function *fn_main;
+  llvm::Function *create_fn_printf();
 
 public:
   llvm::Module *module;
-  CodeGenContext(std::string module_name = "mod_main") {
-    module = new llvm::Module(module_name, LLVM_CTX);
-  }
+  llvm::Function *printf_function;
+  std::map<std::string, llvm::Value*> fmt_specifiers;
+
+  CodeGenContext(std::string module_name = "mod_main");
 
   void code_generate(NBlock &root);
   void print_llvm_ir();
@@ -77,7 +80,5 @@ public:
   void set_return_value(llvm::Value *value) { blocks.top()->ret_val = value; }
   llvm::Value *get_return_value() { return blocks.top()->ret_val; }
 };
-
-void create_core_fns(CodeGenContext &);
 
 #endif

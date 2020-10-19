@@ -198,33 +198,6 @@ codegen.cpp.s:
 	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/codegen.cpp.s
 .PHONY : codegen.cpp.s
 
-core-functions.o: core-functions.cpp.o
-
-.PHONY : core-functions.o
-
-# target to build an object file
-core-functions.cpp.o:
-	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/core-functions.cpp.o
-.PHONY : core-functions.cpp.o
-
-core-functions.i: core-functions.cpp.i
-
-.PHONY : core-functions.i
-
-# target to preprocess a source file
-core-functions.cpp.i:
-	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/core-functions.cpp.i
-.PHONY : core-functions.cpp.i
-
-core-functions.s: core-functions.cpp.s
-
-.PHONY : core-functions.s
-
-# target to generate assembly for a file
-core-functions.cpp.s:
-	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/core-functions.cpp.s
-.PHONY : core-functions.cpp.s
-
 lexer.o: lexer.cpp.o
 
 .PHONY : lexer.o
@@ -321,9 +294,6 @@ help:
 	@echo "... codegen.o"
 	@echo "... codegen.i"
 	@echo "... codegen.s"
-	@echo "... core-functions.o"
-	@echo "... core-functions.i"
-	@echo "... core-functions.s"
 	@echo "... lexer.o"
 	@echo "... lexer.i"
 	@echo "... lexer.s"

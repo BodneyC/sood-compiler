@@ -108,7 +108,6 @@ int main(int argc, char **argv) {
     return 0;
 
   CodeGenContext ctx;
-  // create_core_fns(ctx);
   ctx.code_generate(*prg);
   ctx.verify_module();
 
@@ -120,7 +119,7 @@ int main(int argc, char **argv) {
   if (args.stop_after_llvm_ir)
     return 0;
 
-  // ctx.code_run();
+  ctx.code_run();
 
   return 0;
 }
