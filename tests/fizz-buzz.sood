@@ -23,16 +23,25 @@ fizz_buzz is a function of type string with arguments of:
 
 output is a string of value ''.
 counter is an integer of value 0.
-while counter is less than or equal to number_of_repetitions,
-  output is fizz_buzz called with: counter...
+
+# while counter is less than or equal to number_of_repetitions,
+#   output is fizz_buzz called with counter...
+#   write counter to stdout.
+#   write ': ' to stdout.
+#   # TODO: String equality
+#   write output to stdout.
+#   # if output is equal to '',
+#   #   write counter to stdout...
+#   # else,
+#   #   write output to stdout...
+#   write '\n' to stdout.
+#   counter is counter plus 1...
+
+until counter is equal to number_of_repetitions plus 1,
+  output is fizz_buzz called with counter as an argument.
   write counter to stdout.
   write ': ' to stdout.
-  # TODO: String equality
   write output to stdout.
-  # if output is equal to '',
-  #   write counter to stdout...
-  # else,
-  #   write output to stdout...
   write '\n' to stdout.
   counter is counter plus 1...
 

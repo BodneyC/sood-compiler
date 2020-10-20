@@ -42,9 +42,12 @@
 "of type"                  return TOFTYPE;
 "of value"                 return TOFVALUE;
 "of statements"            return TOFSTMTS;
+"no arguments"             return TNOARGS;
+"as an argument"           return TASARGS;
+"as arguments"             return TASARGS;
 "return"                   return TRETURN;
 "with arguments of:"       return TWITHARGS;
-"with:"                     return TWITH;
+"with"                     return TWITH;
 an?                        return TAN;
 "("                        return TPARO;
 ")"                        return TPARC;

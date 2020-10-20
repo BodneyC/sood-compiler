@@ -144,6 +144,33 @@ sood/fast:
 	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/build
 .PHONY : sood/fast
 
+ast-codegen.o: ast-codegen.cpp.o
+
+.PHONY : ast-codegen.o
+
+# target to build an object file
+ast-codegen.cpp.o:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/ast-codegen.cpp.o
+.PHONY : ast-codegen.cpp.o
+
+ast-codegen.i: ast-codegen.cpp.i
+
+.PHONY : ast-codegen.i
+
+# target to preprocess a source file
+ast-codegen.cpp.i:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/ast-codegen.cpp.i
+.PHONY : ast-codegen.cpp.i
+
+ast-codegen.s: ast-codegen.cpp.s
+
+.PHONY : ast-codegen.s
+
+# target to generate assembly for a file
+ast-codegen.cpp.s:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/ast-codegen.cpp.s
+.PHONY : ast-codegen.cpp.s
+
 ast.o: ast.cpp.o
 
 .PHONY : ast.o
@@ -171,32 +198,59 @@ ast.cpp.s:
 	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/ast.cpp.s
 .PHONY : ast.cpp.s
 
-codegen.o: codegen.cpp.o
+cli.o: cli.cpp.o
 
-.PHONY : codegen.o
+.PHONY : cli.o
 
 # target to build an object file
-codegen.cpp.o:
-	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/codegen.cpp.o
-.PHONY : codegen.cpp.o
+cli.cpp.o:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/cli.cpp.o
+.PHONY : cli.cpp.o
 
-codegen.i: codegen.cpp.i
+cli.i: cli.cpp.i
 
-.PHONY : codegen.i
+.PHONY : cli.i
 
 # target to preprocess a source file
-codegen.cpp.i:
-	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/codegen.cpp.i
-.PHONY : codegen.cpp.i
+cli.cpp.i:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/cli.cpp.i
+.PHONY : cli.cpp.i
 
-codegen.s: codegen.cpp.s
+cli.s: cli.cpp.s
 
-.PHONY : codegen.s
+.PHONY : cli.s
 
 # target to generate assembly for a file
-codegen.cpp.s:
-	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/codegen.cpp.s
-.PHONY : codegen.cpp.s
+cli.cpp.s:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/cli.cpp.s
+.PHONY : cli.cpp.s
+
+codegen-context.o: codegen-context.cpp.o
+
+.PHONY : codegen-context.o
+
+# target to build an object file
+codegen-context.cpp.o:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/codegen-context.cpp.o
+.PHONY : codegen-context.cpp.o
+
+codegen-context.i: codegen-context.cpp.i
+
+.PHONY : codegen-context.i
+
+# target to preprocess a source file
+codegen-context.cpp.i:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/codegen-context.cpp.i
+.PHONY : codegen-context.cpp.i
+
+codegen-context.s: codegen-context.cpp.s
+
+.PHONY : codegen-context.s
+
+# target to generate assembly for a file
+codegen-context.cpp.s:
+	cd /home/benjc/Documents/sood-flex-bison && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/sood.dir/build.make src/CMakeFiles/sood.dir/codegen-context.cpp.s
+.PHONY : codegen-context.cpp.s
 
 lexer.o: lexer.cpp.o
 
@@ -288,12 +342,18 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... sood"
+	@echo "... ast-codegen.o"
+	@echo "... ast-codegen.i"
+	@echo "... ast-codegen.s"
 	@echo "... ast.o"
 	@echo "... ast.i"
 	@echo "... ast.s"
-	@echo "... codegen.o"
-	@echo "... codegen.i"
-	@echo "... codegen.s"
+	@echo "... cli.o"
+	@echo "... cli.i"
+	@echo "... cli.s"
+	@echo "... codegen-context.o"
+	@echo "... codegen-context.i"
+	@echo "... codegen-context.s"
 	@echo "... lexer.o"
 	@echo "... lexer.i"
 	@echo "... lexer.s"

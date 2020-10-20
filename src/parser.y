@@ -27,7 +27,7 @@ NBlock *prg;
 %token <string> /* grammar    */ TCOMMA TPERIOD TAND TCALLED TSEMIC TOFSTMTS
 %token <string> /*            */ TFUNCTION TIS TOFDEFAULT TOFTYPE TOFVALUE
 %token <string> /*            */ TRETURN TWITHARGS TWITH TAN TPARO TPARC
-%token <string> /* constructs */ TIF TELSE TWHILE TUNTIL
+%token <string> /* constructs */ TIF TELSE TWHILE TUNTIL TNOARGS TASARGS
 %token <string> /*            */ TREAD TWRITE TTO TFROM
 %token <val>    /* operators  */ TPLS TMNS TMUL TDIV TMOD
 %token <val>    /* boolean    */ TEQ TNE TLT TLE TMT TME TNOT TNEG TALS TALT
@@ -84,8 +84,8 @@ func_call_args : TWITH expr
                | func_call_args TCOMMA TAND expr { $1->push_back($4); }
                ;
 
-func_call : identifier TCALLED TPERIOD TPERIOD { $$ = new NFunctionCall(*$1); }
-          | identifier TCALLED func_call_args TPERIOD TPERIOD
+func_call : identifier TCALLED TWITH TNOARGS { $$ = new NFunctionCall(*$1); }
+          | identifier TCALLED func_call_args TASARGS
             { $$ = new NFunctionCall(*$1, *$3); delete $3; }
           ;
 
