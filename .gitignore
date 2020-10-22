@@ -1,5 +1,4 @@
 # Development
-tests/.vim
 compile_commands.json
 *.cmake
 *cache*
@@ -17,7 +16,8 @@ parser.cpp
 parser.hpp
 
 # Binaries
-*.o
-parser
-*.bak
 src/sood
+*.o
+*.bak
+tests/*
+!test/*.{ll,sood,ast}

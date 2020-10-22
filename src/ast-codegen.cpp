@@ -51,8 +51,7 @@ llvm::Value *NIdentifier::code_generate(CodeGenContext &ctx) {
     throw CodeGenException(msg.c_str());
   }
   ValTypeTuple _ident = ctx.get_local(val);
-  return new llvm::LoadInst(std::get<llvm::Value *>(_ident), "", false,
-                            BUILDER.GetInsertBlock());
+  return BUILDER.CreateLoad(std::get<llvm::Value *>(_ident), "_val_load");
 }
 
 /* ----- Operative expressions ------ */
@@ -65,9 +64,9 @@ llvm::Value *NUnaryExpression::code_generate(CodeGenContext &ctx) {
 
   switch (op) {
   case TNOT:
-    return BUILDER.CreateNot(_rhs);
+    return BUILDER.CreateNot(_rhs, "_rhs_not");
   case TNEG:
-    return BUILDER.CreateFNeg(_rhs);
+    return BUILDER.CreateFNeg(_rhs, "_rhs_neg");
   default:
     throw CodeGenException("Invalid unary operator");
   }
@@ -85,11 +84,11 @@ llvm::Value *NBinaryExpression::code_generate(CodeGenContext &ctx) {
   llvm::Type *_rhs_type = _rhs->getType();
 
   if (_lhs_type == DOUBLE_TYPE && _rhs_type == INTEGER_TYPE) {
-    _rhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _rhs, DOUBLE_TYPE);
+    _rhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _rhs, DOUBLE_TYPE, "_rhs_cast");
     _rhs_type = DOUBLE_TYPE;
   }
   if (_lhs_type == INTEGER_TYPE && _rhs_type == DOUBLE_TYPE) {
-    _lhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _lhs, DOUBLE_TYPE);
+    _lhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _lhs, DOUBLE_TYPE, "_lhs_cast");
     _lhs_type = DOUBLE_TYPE;
   }
 
@@ -168,10 +167,10 @@ llvm::Value *cast_relevantly(llvm::Value *_rhs, ValTypeTuple _lhs_tuple) {
   llvm::Type *_rhs_type = _rhs->getType();
 
   if (_lhs_type == DOUBLE_TYPE && _rhs_type == INTEGER_TYPE)
-    _rhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _rhs, DOUBLE_TYPE);
+    _rhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _rhs, DOUBLE_TYPE, "_rhs_cast_to_double");
 
   if (_lhs_type == INTEGER_TYPE && _rhs_type == DOUBLE_TYPE)
-    _rhs = BUILDER.CreateCast(llvm::Instruction::FPToSI, _lhs, INTEGER_TYPE);
+    _rhs = BUILDER.CreateCast(llvm::Instruction::FPToSI, _lhs, INTEGER_TYPE, "_rhs_cast_to_int");
 
   if (_lhs_type == STRING_TYPE && _rhs_type != STRING_TYPE) {
     _rhs = nullptr;
@@ -223,12 +222,12 @@ llvm::Value *NWrite::code_generate(CodeGenContext &ctx) {
     llvm::SmallVector<llvm::Value *, 2> printf_args;
     printf_args.push_back(ctx.fmt_specifiers.at("numeric"));
     printf_args.push_back(_exp);
-    return BUILDER.CreateCall(ctx.printf_function, printf_args);
+    return BUILDER.CreateCall(ctx.printf_function, printf_args, "_printf_call");
   } else if (_exp_type == STRING_TYPE) {
     llvm::SmallVector<llvm::Value *, 2> printf_args;
     printf_args.push_back(ctx.fmt_specifiers.at("string"));
     printf_args.push_back(_exp);
-    return BUILDER.CreateCall(ctx.printf_function, printf_args);
+    return BUILDER.CreateCall(ctx.printf_function, printf_args, "_printf_call");
   }
   throw CodeGenException("Write not yet implemented");
 }
@@ -328,7 +327,7 @@ llvm::Value *NFunctionCall::code_generate(CodeGenContext &ctx) {
   for (it = args.begin(); it != args.end(); it++)
     _args.push_back((*it)->code_generate(ctx));
 
-  return BUILDER.CreateCall(fn, _args, "call_tmp");
+  return BUILDER.CreateCall(fn, _args, "_f_call");
 }
 
 /* ------ constructs ------ */

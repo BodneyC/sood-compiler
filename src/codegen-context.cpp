@@ -80,6 +80,13 @@ llvm::GenericValue CodeGenContext::code_run() {
 }
 
 int CodeGenContext::write_object(std::string &filename) {
+  
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmParsers();
+  llvm::InitializeAllAsmPrinters();
+
   auto target_triple = llvm::sys::getDefaultTargetTriple();
   module->setTargetTriple(target_triple);
 
@@ -108,9 +115,9 @@ int CodeGenContext::write_object(std::string &filename) {
   }
 
   llvm::legacy::PassManager pass;
-  auto FileType = llvm::CGFT_ObjectFile;
+  auto file_type = llvm::CGFT_ObjectFile;
 
-  if (target_machine->addPassesToEmitFile(pass, dest, nullptr, FileType)) {
+  if (target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
     llvm::errs() << "Target machine configuration unable to emit object code";
     return 1;
   }

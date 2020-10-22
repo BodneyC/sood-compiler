@@ -10,7 +10,8 @@ b is an integer. # Zero initialized
 # b is 1 plus 2.
 # b is 1 plus 2.0.
 # b is 1 is more than 2.
-b is 1 is more than 2.0.
+b is 2.
+write b to stdout.
 # b is 5. # numeric
 
 # b is c called...

@@ -13,18 +13,12 @@ int main(int argc, char **argv) {
 
   SoodArgs args = parse_args(argc, argv);
 
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmParser();
-  llvm::InitializeNativeTargetAsmPrinter();
-
-  // Input options
   if (args.input != "")
     yyin = std::fopen(args.input.c_str(), "r");
   yyparse();
   if (args.input != "")
     std::fclose(yyin);
 
-  // AST outputs
   if (args.print_ast)
     std::cout << *prg << std::endl;
   if (args.ast_out != "") {
@@ -54,7 +48,7 @@ int main(int argc, char **argv) {
   if(!args.no_run)
     ctx.code_run();
 
-  if(!args.no_object_out)
+  if(!args.no_object_out && args.output != "")
     ctx.write_object(args.output);
 
   return 0;
