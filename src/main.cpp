@@ -23,7 +23,14 @@ int main(int argc, char **argv) {
 
   if (args.input != "") {
     spdlog::debug("Reading input from file {}", args.input);
-    yyin = std::fopen(args.input.c_str(), "r");
+    if (!(yyin = std::fopen(args.input.c_str(), "r"))) {
+      spdlog::error("Input file {} does not exist, exiting...", args.input);
+      std::exit(1);
+    }
+    fseek(yyin, 0, SEEK_END);
+    if (!ftell(yyin))
+      spdlog::warn("Input file {} is empty", args.input);
+    fseek(yyin, 0, SEEK_SET);
   }
   yyparse();
   if (args.input != "")
@@ -68,14 +75,19 @@ int main(int argc, char **argv) {
     ctx.code_run();
   }
 
-  std::string obj_fname = args.input;
+  std::string obj_fname = args.output;
 
   if (!args.stop_after_object) {
-    obj_fname = "/tmp/" + args.output + ".o.XXXXXX";
+    auto pos = obj_fname.rfind("/");
+    if(pos != std::string::npos)
+      obj_fname.erase(0, pos + 1);
+    obj_fname = "/tmp/" + obj_fname + ".o.XXXXXX";
     char *obj_fname_c = strdup(obj_fname.c_str());
     int fd = mkstemp(obj_fname_c);
-    if(fd == -1)
-      throw std::runtime_error("Could not open temporary file");
+    if (fd == -1) {
+      spdlog::error("Could not open temporary file");
+      std::exit(1);
+    }
     obj_fname = std::string(obj_fname_c);
   }
 
@@ -85,7 +97,8 @@ int main(int argc, char **argv) {
   if (args.stop_after_object)
     return 0;
 
-  subprocess::popen gcc_cmd("gcc", { "-o", args.output.c_str(), obj_fname.c_str() });
+  subprocess::popen gcc_cmd("gcc",
+                            {"-o", args.output.c_str(), obj_fname.c_str()});
   if (gcc_cmd.wait()) {
     spdlog::error("GCC compilation failed:");
     std::cerr << gcc_cmd.stderr().rdbuf() << std::endl;
