@@ -5,11 +5,11 @@ project(sood)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # TODO: Get rid of the very specific LLVM-10 option
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -lLLVM-10")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -std=c++14 -lLLVM-10")
 
 # LLVM
 find_package(LLVM REQUIRED CONFIG)
-# find_package(spdlog REQUIRED)
+find_package(spdlog REQUIRED)
 
 find_package(BISON)
 message(STATUS "Bison version: ${BISON_VERSION}")

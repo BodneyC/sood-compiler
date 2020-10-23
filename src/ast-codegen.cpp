@@ -172,32 +172,8 @@ llvm::Value *cast_relevantly(llvm::Value *_rhs, ValTypeTuple _lhs_tuple) {
   if (_lhs_type == INTEGER_TYPE && _rhs_type == DOUBLE_TYPE)
     _rhs = BUILDER.CreateCast(llvm::Instruction::FPToSI, _lhs, INTEGER_TYPE, "_rhs_cast_to_int");
 
-  if (_lhs_type == STRING_TYPE && _rhs_type != STRING_TYPE) {
+  if (_lhs_type == STRING_TYPE && _rhs_type != STRING_TYPE)
     _rhs = nullptr;
-    /*
-    std::string _rhs_str = "";
-
-    if (_rhs_type == INTEGER_TYPE) {
-      std::int64_t _rhs_i_val = 0;
-      if (llvm::ConstantInt *_rhs_ci = llvm::dyn_cast<llvm::ConstantInt>(_rhs))
-        _rhs_i_val = _rhs_ci->getSExtValue();
-      else
-        std::cerr << "Couldn't cast INTEGER_TYPE to ConstantInt" << std::endl;
-      _rhs_str = std::to_string(_rhs_i_val);
-
-    } else if (_rhs_type == DOUBLE_TYPE) {
-      double _rhs_f_val = 0.0;
-      if (llvm::ConstantFP *_rhs_ci = llvm::dyn_cast<llvm::ConstantFP>(_rhs))
-        _rhs_f_val = _rhs_ci->getValueAPF().convertToDouble();
-      else
-        std::cerr << "Couldn't cast DOUBLE_TYPE to ConstantFP" << std::endl;
-      _rhs_str = std::to_string(_rhs_f_val);
-    } else
-      throw CodeGenException("RHS is neither int not float");
-    _rhs = BUILDER.CreateAlloca(STRING_TYPE, 0, "_tmp_str");
-    BUILDER.CreateStore(get_i8_str_ptr(_rhs_str.c_str(), "_tmp_str_glb"), _rhs);
-    */
-  }
   return _rhs;
 }
 

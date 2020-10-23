@@ -15,4 +15,4 @@ set(SOURCE_FILES
 set(SOURCE_TEST_FILES ${SOURCE_FILES} PARENT_SCOPE)
 
 add_executable(sood main.cpp ${SOURCE_FILES})
-target_link_libraries(sood ${llvm_libs}) # spdlog::spdlog_header_only)
+target_link_libraries(sood ${llvm_libs} spdlog::spdlog_header_only)

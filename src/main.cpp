@@ -1,55 +1,98 @@
 #include <fstream>
 #include <iostream>
+#include <spdlog/cfg/env.h>
+#include <spdlog/spdlog.h>
 
 #include "ast.hpp"
-#include "codegen.hpp"
 #include "cli.hpp"
+#include "codegen.hpp"
+#include "subprocess.hpp"
 
 extern int yyparse();
 extern FILE *yyin;
 extern NBlock *prg;
 
+const int BT_VOL = 32;
+
 int main(int argc, char **argv) {
+  spdlog::info("Starting Sood compiler...");
+  spdlog::enable_backtrace(BT_VOL);
+  spdlog::cfg::load_env_levels();
 
   SoodArgs args = parse_args(argc, argv);
 
-  if (args.input != "")
+  if (args.input != "") {
+    spdlog::debug("Reading input from file {}", args.input);
     yyin = std::fopen(args.input.c_str(), "r");
+  }
   yyparse();
   if (args.input != "")
     std::fclose(yyin);
 
-  if (args.print_ast)
+  if (args.print_ast) {
+    spdlog::debug("Printing AST to stdout...");
     std::cout << *prg << std::endl;
-  if (args.ast_out != "") {
-    std::ofstream ast_out(args.ast_out);
-    ast_out << *prg << std::endl;
-    ast_out.close();
   }
 
-  if (args.stop_after_ast)
+  if (args.stop_after_ast) {
+    spdlog::info("Writing AST to {}...", args.output);
+    std::ofstream ast_out(args.output);
+    ast_out << *prg << std::endl;
+    ast_out.close();
+    spdlog::info("Stopping after AST generation");
     return 0;
+  }
 
   CodeGenContext ctx;
   ctx.code_generate(*prg);
 
-  if (!args.no_verify)
+  if (!args.no_verify) {
+    spdlog::info("Verifying LLVM module");
     ctx.verify_module();
+  }
 
-  if (args.print_llvm_ir)
+  if (args.print_llvm_ir) {
+    spdlog::debug("Printing LLVM IR to stdout...");
     ctx.print_llvm_ir();
+  }
 
-  if (args.llvm_ir_out != "")
-    ctx.print_llvm_ir_to_file(args.llvm_ir_out);
+  if (args.stop_after_llvm_ir) {
+    spdlog::info("Writing LLVM IR to {}...", args.output);
+    ctx.print_llvm_ir_to_file(args.output);
+    spdlog::info("Stopping after LLVM IR generation");
+    return 0;
+  }
 
-  if (args.stop_after_llvm_ir)
+  if (args.run_llvm_ir) {
+    spdlog::info("Running LLVM module...");
+    ctx.code_run();
+  }
+
+  std::string obj_fname = args.input;
+
+  if (!args.stop_after_object) {
+    obj_fname = "/tmp/" + args.output + ".o.XXXXXX";
+    char *obj_fname_c = strdup(obj_fname.c_str());
+    int fd = mkstemp(obj_fname_c);
+    if(fd == -1)
+      throw std::runtime_error("Could not open temporary file");
+    obj_fname = std::string(obj_fname_c);
+  }
+
+  spdlog::debug("Writing object code to {}", obj_fname);
+  ctx.write_object(obj_fname);
+
+  if (args.stop_after_object)
     return 0;
 
-  if(!args.no_run)
-    ctx.code_run();
+  subprocess::popen gcc_cmd("gcc", { "-o", args.output.c_str(), obj_fname.c_str() });
+  if (gcc_cmd.wait()) {
+    spdlog::error("GCC compilation failed:");
+    std::cerr << gcc_cmd.stderr().rdbuf() << std::endl;
+  } else {
+    spdlog::info("Native binary written to {}", args.output);
+  }
 
-  if(!args.no_object_out && args.output != "")
-    ctx.write_object(args.output);
-
+  spdlog::info("Finishing Sood compiler");
   return 0;
 }

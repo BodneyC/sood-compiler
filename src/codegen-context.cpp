@@ -38,7 +38,7 @@ void CodeGenContext::code_generate(NBlock &root) {
   llvm::FunctionType *fn_type = llvm::FunctionType::get(
       llvm::Type::getVoidTy(LLVM_CTX), makeArrayRef(arg_types), false);
 
-  fn_main = llvm::Function::Create(fn_type, llvm::GlobalValue::InternalLinkage,
+  fn_main = llvm::Function::Create(fn_type, llvm::GlobalValue::ExternalLinkage,
                                    "main", module);
   llvm::BasicBlock *_block =
       llvm::BasicBlock::Create(LLVM_CTX, "entry", fn_main, 0);
@@ -58,7 +58,6 @@ void CodeGenContext::code_generate(NBlock &root) {
 
 void CodeGenContext::verify_module() {
   llvm::verifyModule(*module, &llvm::outs());
-  std::cout << std::endl;
 }
 
 void CodeGenContext::print_llvm_ir() { module->print(llvm::outs(), nullptr); }
@@ -80,14 +79,14 @@ llvm::GenericValue CodeGenContext::code_run() {
 }
 
 int CodeGenContext::write_object(std::string &filename) {
-  
+
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();
   llvm::InitializeAllAsmParsers();
   llvm::InitializeAllAsmPrinters();
 
-  auto target_triple = llvm::sys::getDefaultTargetTriple();
+  std::string target_triple = llvm::sys::getDefaultTargetTriple();
   module->setTargetTriple(target_triple);
 
   std::string err;
@@ -99,9 +98,8 @@ int CodeGenContext::write_object(std::string &filename) {
   }
 
   llvm::TargetOptions opt;
-  auto reloc_model = llvm::Optional<llvm::Reloc::Model>();
   llvm::TargetMachine *target_machine = target->createTargetMachine(
-      target_triple, "generic", "", opt, reloc_model);
+      target_triple, "generic", "", opt, llvm::Reloc::PIC_);
 
   module->setDataLayout(target_machine->createDataLayout());
 
@@ -115,7 +113,7 @@ int CodeGenContext::write_object(std::string &filename) {
   }
 
   llvm::legacy::PassManager pass;
-  auto file_type = llvm::CGFT_ObjectFile;
+  llvm::CodeGenFileType file_type = llvm::CGFT_ObjectFile;
 
   if (target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
     llvm::errs() << "Target machine configuration unable to emit object code";
@@ -125,7 +123,7 @@ int CodeGenContext::write_object(std::string &filename) {
   pass.run(*module);
   dest.flush();
 
-  llvm::outs() << "Object code written to { " + filename + " }\n";
+  llvm::outs() << "LLVM: Object code written to { " + filename + " }\n";
 
   return 0;
 }

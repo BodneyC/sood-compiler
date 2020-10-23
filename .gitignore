@@ -19,5 +19,6 @@ parser.hpp
 src/sood
 *.o
 *.bak
-tests/*
-!test/*.{ll,sood,ast}
+tests/.vim
+tests/*.s
+*.out

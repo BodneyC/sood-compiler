@@ -5,9 +5,16 @@
 
 #define SAVE_TOKEN (yylval.string = new std::string(yytext, yyleng));
 #define TOKEN(t)   (yylval.val = t);
+
+void yyerror(const char *s) {
+  std::printf("Lexer/parser error on line %d: %s\n", yylineno, s);
+  std::exit(1);
+}
+
 %}
 
 %option noyywrap
+%option yylineno
 
 %%
 
