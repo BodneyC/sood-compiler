@@ -97,6 +97,19 @@ int main(int argc, char **argv) {
   if (args.stop_after_object)
     return 0;
 
+  /**
+   * Note: This works but I may as well just use gcc
+   *   ld --verbose -L/usr/lib -lc \
+   *     -dynamic-linker \
+   *     /lib64/ld-linux-x86-64.so.2 \
+   *     /usr/lib/Scrt1.o \
+   *     /usr/lib/crti.o \
+   *     /usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/crtbeginS.o \
+   *     /usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/crtendS.o  \
+   *     <object file> \
+   *     -o <binary> \
+   *     /usr/lib/crtn.o
+   */
   subprocess::popen gcc_cmd("gcc",
                             {"-o", args.output.c_str(), obj_fname.c_str()});
   if (gcc_cmd.wait()) {

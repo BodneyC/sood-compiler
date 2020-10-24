@@ -17,24 +17,26 @@ struct Indent {
 Indent indt;
 
 void NAssignment::print(std::ostream &out) const {
-  out << indt.indent() << "assignment { lhs: " << lhs << ", rhs: ";
+  out << indt.indent() << "assignment {" << '\n';
   indt.inc();
-  out << rhs;
+  out << indt.indent() << "lhs: " << lhs << "," << '\n';
+  out << indt.indent() << "rhs: " << rhs;
   indt.dec();
-  out << indt.indent() << "}" << '\n';
+  out << '\n' << indt.indent() << "}" << '\n';
 }
 
 void NBinaryExpression::print(std::ostream &out) const {
-  out << '\n'
-      << indt.indent() << "binary_expression { lhs: " << lhs << ", op: " << op
-      << ", rhs: ";
-  indt.inc(2);
-  out << rhs << " }" << '\n';
-  indt.dec(2);
+  out << "binary_expression {" << '\n';
+  indt.inc();
+  out << indt.indent() << "lhs: " << lhs << "," << '\n';
+  out << indt.indent() << "op: " << op << "," << '\n';
+  out << indt.indent() << "rhs: " << rhs << '\n';
+  indt.dec();
+  out << indt.indent() << "}";
 }
 
 void NBlock::print(std::ostream &out) const {
-  out << indt.indent() << "block {" << '\n';
+  out << indt.indent() << "block: {" << '\n';
   indt.inc();
   for (auto &stmt : stmts) {
     out << *stmt;
@@ -55,17 +57,20 @@ void NFloat::print(std::ostream &out) const {
 }
 
 void NFunctionCall::print(std::ostream &out) const {
-  out << '\n' << indt.indent() << "func_call { id: " << id;
+  out << "func_call {" << '\n';
+  indt.inc();
+  out << indt.indent() << "id: " << id;
   if (args.size()) {
-    out << ", args: { " << '\n';
-    indt.inc(2);
+    out << ", args: {" << '\n';
+    indt.inc();
     out << indt.indent();
     for (auto &arg : args)
       out << *arg << ", ";
-    indt.dec(2);
-    out << "}";
+    indt.dec();
+    out << '\n' << indt.indent() << "}";
   }
-  out << " }" << '\n';
+  indt.dec();
+  out << '\n' << indt.indent() << "}";
 }
 
 void NElseStatement::print(std::ostream &out) const {
@@ -77,11 +82,10 @@ void NElseStatement::print(std::ostream &out) const {
 }
 
 void NIfStatement::print(std::ostream &out) const {
-  out << indt.indent() << "if { cond: ";
-  indt.inc(2);
-  out << cond;
-  indt.dec();
-  out << "," << '\n' << block;
+  out << indt.indent() << "if_stmt {" << '\n';
+  indt.inc();
+  out << indt.indent() << "cond: " << cond << "," << '\n';
+  out << block;
   indt.dec();
   out << indt.indent() << "}";
   if (els)
@@ -89,30 +93,30 @@ void NIfStatement::print(std::ostream &out) const {
 }
 
 void NUntilStatement::print(std::ostream &out) const {
-  out << indt.indent() << "until { cond: ";
-  indt.inc(2);
-  out << cond;
-  indt.dec();
-  out << "," << '\n' << block;
+  out << indt.indent() << "until_stmt {" << '\n';
+  indt.inc();
+  out << indt.indent() << "cond: " << cond << "," << '\n';
+  out << block;
   indt.dec();
   out << indt.indent() << "}" << '\n';
 }
 
 void NWhileStatement::print(std::ostream &out) const {
-  out << indt.indent() << "while { cond: ";
-  indt.inc(2);
-  out << cond;
-  indt.dec();
-  out << "," << '\n' << block;
+  out << indt.indent() << "while_stmt {" << '\n';
+  indt.inc();
+  out << indt.indent() << "cond: " << cond << "," << '\n';
+  out << block;
   indt.dec();
   out << indt.indent() << "}" << '\n';
 }
 
 void NFunctionDeclaration::print(std::ostream &out) const {
-  out << indt.indent() << "func_decl { type: " << type << ", name: " << id << ", ";
+  out << indt.indent() << "func_decl {" << '\n';
   indt.inc();
+  out << indt.indent() << "type: " << type << "," << '\n';
+  out << indt.indent() << "name: " << id << "," << '\n';
   if (args.size()) {
-    out << "args: { " << '\n';
+    out << indt.indent() << "args: {" << '\n';
     indt.inc();
     for (auto &arg : args)
       out << *arg;
@@ -131,11 +135,13 @@ void NIdentifier::print(std::ostream &out) const {
 void NInteger::print(std::ostream &out) const { out << "int(" << val << ")"; }
 
 void NRead::print(std::ostream &out) const {
-  out << indt.indent() << "read { from: " << from << ", to: " << to << " }" << '\n';
+  out << indt.indent() << "read { from: " << from << ", to: " << to << " }"
+      << '\n';
 }
 
 void NWrite::print(std::ostream &out) const {
-  out << indt.indent() << "write { exp: " << exp << ", to: " << to << " }" << '\n';
+  out << indt.indent() << "write { exp: " << exp << ", to: " << to << " }"
+      << '\n';
 }
 
 void NReturnStatement::print(std::ostream &out) const {
