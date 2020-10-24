@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 MD013 -->
 
-<p align="center"><img style="height:160px" src="./img/sood-logo.all-circles.svg" alt="sood-logo"/></p>
+<p align="center"><img height="160px" src="./img/sood-logo.all-circles.svg" alt="sood-logo"/></p>
 
 # Sood
 
