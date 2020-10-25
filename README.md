@@ -14,7 +14,7 @@ So no braces, few to no parentheses, no non-alpha characters used to define oper
 
 Though this concept has been satisfactorily implemented in Sood, I cannot say it was one-hundred percent successful; Sood adheres to this "philosophy" better than any other language I can think of... but perhaps there's a good reason that other languages have not tried it.
 
-There are of course other languages that use words and sentences to write code, but none I can find that are just the words/sentences meaning exactly what they mean. For example, there is the [Rockstar programming language](https://github.com/RockstarLang/rockstar) where integer initialization may take the form:
+There are of course other languages that use words and sentences to write code, but none I can find are just the words/sentences meaning exactly what they mean. For example, there is the [Rockstar programming language](https://github.com/RockstarLang/rockstar) where integer initialization may take the form:
 
 ```rockstar
 (Rockstar)

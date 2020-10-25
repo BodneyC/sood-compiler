@@ -75,7 +75,7 @@ stmt : var_decl
      | while_stmt
      | until_stmt
      | io_stmt
-     | expr { $$ = new NExpressionStatement(*$1); }
+     | expr TPERIOD { $$ = new NExpressionStatement(*$1); }
      | identifier TIS expr TPERIOD  { $$ = new NAssignment(*$1, *$3); }
      | TRETURN expr TPERIOD { $$ = new NReturnStatement(*$2); }
      ;

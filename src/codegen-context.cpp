@@ -2,13 +2,41 @@
 #include "codegen.hpp"
 #include "parser.hpp"
 
+/**
+ * Construct: Global variable
+ * Name: LLVM_CTX
+ * Desc: The LLVM context of the program/module
+ */
 llvm::LLVMContext LLVM_CTX;
+
+/**
+ * Construct: Global variable
+ * Name: BUILDER
+ * Desc: The LLVM IR building utility constructed under the global context
+ *   (see `LLVM_CTX`)
+ */
 llvm::IRBuilder<> BUILDER(LLVM_CTX);
 
+/**
+ * Construct: Global variable
+ * Name: DOUBLE_TYPE, STRING_TYPE, INTEGER_TYPE
+ * Desc: To save from frequently calling to `llvm::Type::getXXXTy(LLVM_CTX)`,
+ *   these are created once at compiler startup
+ */
 llvm::Type *DOUBLE_TYPE = llvm::Type::getDoubleTy(LLVM_CTX);
 llvm::Type *STRING_TYPE = llvm::Type::getInt8PtrTy(LLVM_CTX);
 llvm::Type *INTEGER_TYPE = llvm::Type::getInt64Ty(LLVM_CTX);
 
+/**
+ * Construct: Function
+ * Name: get_i8_str_ptr
+ * Desc: Create a global string and return a pointer to it, used to naively
+ *   implement strings in the language
+ * Args:
+ *   - str: The string to store as a global in the resulting program
+ *   - twine: The string used to refer to the global string in the resulting
+ *     program
+ */
 llvm::Constant *get_i8_str_ptr(char const *str, llvm::Twine const &twine) {
   return BUILDER.CreateGlobalStringPtr(str, twine);
 }
@@ -18,6 +46,12 @@ CodeGenContext::CodeGenContext(std::string module_name) {
   printf_function = create_fn_printf();
 }
 
+/**
+ * Construct: Method
+ * Name: CodeGenContext::create_fn_printf
+ * Desc: Create the reference to the `printf` function will can be called by
+ *   the Sood program and requires linking to libc to run as an executable
+ */
 llvm::Function *CodeGenContext::create_fn_printf() {
   std::vector<llvm::Type *> printf_arg_types;
   printf_arg_types.push_back(llvm::Type::getInt8PtrTy(LLVM_CTX));
@@ -32,6 +66,14 @@ llvm::Function *CodeGenContext::create_fn_printf() {
   return func;
 }
 
+/**
+ * Construct: Method
+ * Name: CodeGenContext::code_generate
+ * Desc: Core function used to populate the module based on the AST generated
+ *   earlier
+ * Args:
+ *   - root: The root block (see `NBlock`) of the AST
+ */
 void CodeGenContext::code_generate(NBlock &root) {
   std::vector<llvm::Type *> arg_types;
 
@@ -56,19 +98,40 @@ void CodeGenContext::code_generate(NBlock &root) {
   pop_block();
 }
 
+/**
+ * Construct: Method
+ * Name: CodeGenContext::verify_module
+ * Desc: Optionally verify the LLVM module
+ */
 void CodeGenContext::verify_module() {
   llvm::verifyModule(*module, &llvm::outs());
 }
 
+/**
+ * Construct: Method
+ * Name: CodeGenContext::print_llvm_ir
+ * Desc: Prints the generated LLVM IR to the console
+ */
 void CodeGenContext::print_llvm_ir() { module->print(llvm::outs(), nullptr); }
 
+/**
+ * Construct: Method
+ * Name: CodeGenContext::print_llvm_ir_to_file
+ * Desc: Writes the generated LLVM IR to the specified file
+ * Args:
+ *   - filename: String reference to the filename
+ */
 void CodeGenContext::print_llvm_ir_to_file(std::string &filename) {
   std::error_code error_code;
   llvm::raw_fd_ostream ost(filename, error_code, llvm::sys::fs::F_None);
   module->print(ost, nullptr);
 }
 
-/* Executes the AST by running the main function */
+/**
+ * Construct: Method
+ * Name: CodeGenContext::code_run
+ * Desc: Runs the main function of the module with the LLVM execution engine
+ */
 llvm::GenericValue CodeGenContext::code_run() {
   llvm::ExecutionEngine *engine =
       llvm::EngineBuilder(std::unique_ptr<llvm::Module>(module)).create();
@@ -78,6 +141,14 @@ llvm::GenericValue CodeGenContext::code_run() {
   return v;
 }
 
+/**
+ * Construct: Method
+ * Name: CodeGenContext::write_object
+ * Desc: Optionally write module, as native object code, to the specified
+ *   filename
+ * Args:
+ *   - filename: String reference to the filename
+ */
 int CodeGenContext::write_object(std::string &filename) {
 
   llvm::InitializeAllTargetInfos();
@@ -97,6 +168,11 @@ int CodeGenContext::write_object(std::string &filename) {
     return 1;
   }
 
+  /**
+   * Set up target machine with a generic CPU and the
+   *   [PIC](https://docs.oracle.com/cd/E26505_01/html/E26506/glmqp.html)
+   *   relocation model
+   */
   llvm::TargetOptions opt;
   llvm::TargetMachine *target_machine = target->createTargetMachine(
       target_triple, "generic", "", opt, llvm::Reloc::PIC_);

@@ -2,25 +2,39 @@
 #include "codegen.hpp"
 #include "parser.hpp"
 
-/* Returns an LLVM type based on the identifier */
+/** Returns an LLVM type based on the identifier */
 static llvm::Type *type_of(const NIdentifier &type) {
   if (type.val == "integer")
     return llvm::Type::getInt64Ty(LLVM_CTX);
   if (type.val == "float")
     return llvm::Type::getDoubleTy(LLVM_CTX);
   if (type.val == "string")
-    return llvm::Type::getInt8PtrTy(LLVM_CTX); // TODO: Work out string type
+    return llvm::Type::getInt8PtrTy(LLVM_CTX);
   throw CodeGenException("Unknown variable type");
 }
 
 /* -------- Types  -------- */
 
+/**
+ * Construct: Method
+ * Name: NInteger::code_generate
+ * Desc: Create a variable of constant integer type (see `INTEGER_TYPE`)
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NInteger::code_generate(CodeGenContext &ctx) {
-  return llvm::ConstantInt::get(llvm::Type::getInt64Ty(LLVM_CTX), val, true);
+  return llvm::ConstantInt::get(INTEGER_TYPE, val, true);
 }
 
+/**
+ * Construct: Method
+ * Name: NFloat::code_generate
+ * Desc: Create a variable of constant floating type (see `DOUBLE_TYPE`)
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NFloat::code_generate(CodeGenContext &ctx) {
-  return llvm::ConstantFP::get(llvm::Type::getDoubleTy(LLVM_CTX), val);
+  return llvm::ConstantFP::get(DOUBLE_TYPE, val);
 }
 
 void replace_all(std::string &input, const std::string &from,
@@ -28,23 +42,56 @@ void replace_all(std::string &input, const std::string &from,
   if (!from.empty()) {
     size_t start_pos = 0;
     while ((start_pos = input.find(from, start_pos)) != std::string::npos) {
-      input.replace(start_pos, from.length(), to);
+      if (!(start_pos > 1 && input[start_pos - 1] == '\\'))
+        input.replace(start_pos, from.length(), to);
       start_pos += to.length();
     }
   }
 }
 
+/**
+ * Construct: Function
+ * Name: process_escape_chars
+ * Desc: The strings read by the lexer appends chars to a string, so any
+ *   escaped characters are overlooked (viewed as `\\n` instead of `\n`, for
+ *   example) so this simply replaces all instances of common escape character
+ *   which are separated into their single character
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ * Notes:
+ *   - The string "\\n" can be used without being replacement to newline, this
+ *     will instead be replaced to `\n`
+ */
 void process_escape_chars(std::string &input) {
   replace_all(input, "\\n", "\n");
   replace_all(input, "\\r", "\r");
   replace_all(input, "\\t", "\t");
+  replace_all(input, "\\\\", "\\");
 }
 
+/**
+ * Construct: Method
+ * Name: NString::code_generate
+ * Desc: Creates a global string with the contents of the `val` member and
+ *   return a poitner to it
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NString::code_generate(CodeGenContext &ctx) {
   process_escape_chars(val);
   return get_i8_str_ptr(val.c_str(), "l_str");
 }
 
+/**
+ * Construct: Method
+ * Name: NIdentifier::code_generate
+ * Desc: This is a reference to a variable and not a variable delcaration, so
+ *   first we must check to see if the identifier exists in the current
+ *   context, if not, an exception is thrown.  If the identifier does exist,
+ *   return the llvm::Value pointer to that local
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NIdentifier::code_generate(CodeGenContext &ctx) {
   if (ctx.locals().find(val) == ctx.locals().end()) {
     std::string msg = "Identifier " + val + " not found in current context";
@@ -56,6 +103,14 @@ llvm::Value *NIdentifier::code_generate(CodeGenContext &ctx) {
 
 /* ----- Operative expressions ------ */
 
+/**
+ * Construct: Method
+ * Name: NUnaryExpression::code_generate
+ * Desc: Creates a unary operation applied to the relevant RHS using the
+ *   global LLVM IR builder (see `BUILDER`)
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NUnaryExpression::code_generate(CodeGenContext &ctx) {
   llvm::Value *_rhs = rhs.code_generate(ctx);
 
@@ -72,6 +127,19 @@ llvm::Value *NUnaryExpression::code_generate(CodeGenContext &ctx) {
   }
 }
 
+/**
+ * Construct: Method
+ * Name: NUnaryExpression::code_generate
+ * Desc: Creates a binary operation between the relevant LHS and RHS, there
+ *   is some rudimentary type casting between integer and floating point
+ *   number if the types of `lhs` and `rhs` differ. Operation is created
+ *   using the global LLVM IR builder (see `BUILDER`)
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ * Notes:
+ *   - Currently, any boolean or arithmetic expression applied to a string
+ *     will fail, this is a future task
+ */
 llvm::Value *NBinaryExpression::code_generate(CodeGenContext &ctx) {
   llvm::Value *_lhs = lhs.code_generate(ctx);
   llvm::Value *_rhs = rhs.code_generate(ctx);
@@ -84,11 +152,13 @@ llvm::Value *NBinaryExpression::code_generate(CodeGenContext &ctx) {
   llvm::Type *_rhs_type = _rhs->getType();
 
   if (_lhs_type == DOUBLE_TYPE && _rhs_type == INTEGER_TYPE) {
-    _rhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _rhs, DOUBLE_TYPE, "_rhs_cast");
+    _rhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _rhs, DOUBLE_TYPE,
+                              "_rhs_cast");
     _rhs_type = DOUBLE_TYPE;
   }
   if (_lhs_type == INTEGER_TYPE && _rhs_type == DOUBLE_TYPE) {
-    _lhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _lhs, DOUBLE_TYPE, "_lhs_cast");
+    _lhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _lhs, DOUBLE_TYPE,
+                              "_lhs_cast");
     _lhs_type = DOUBLE_TYPE;
   }
 
@@ -150,6 +220,15 @@ llvm::Value *NBinaryExpression::code_generate(CodeGenContext &ctx) {
 }
 
 /* ------ Chunks ------*/
+
+/**
+ * Construct: Method
+ * Name: NBlock::code_generate
+ * Desc: Iterates over the statements of the block (see `NBlock` : `stmts`)
+ *   and calls their respective `code_generate` methods
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NBlock::code_generate(CodeGenContext &ctx) {
   llvm::Value *last = nullptr;
   NStatementList::const_iterator it;
@@ -159,6 +238,18 @@ llvm::Value *NBlock::code_generate(CodeGenContext &ctx) {
   return last;
 }
 
+/**
+ * Construct: Function
+ * Name: cast_relevantly
+ * Desc: Casts the RHS value to the type of LHS for use in an assignment
+ * Args:
+ *   - _rhs: The LLVM value of the RHS expression
+ *   - _lhs_typle: The value/type tuple from the locals of the `CodeGenBlock`
+ * Notes:
+ *   - Currently, this function does nothing with string and attempts to
+ *     assign an integer to a string or vice versa will fail, this is a future
+ *     task
+ */
 llvm::Value *cast_relevantly(llvm::Value *_rhs, ValTypeTuple _lhs_tuple) {
   llvm::Value *_lhs;
   llvm::Type *_lhs_type;
@@ -166,17 +257,35 @@ llvm::Value *cast_relevantly(llvm::Value *_rhs, ValTypeTuple _lhs_tuple) {
 
   llvm::Type *_rhs_type = _rhs->getType();
 
+  /**
+   * Any casting here is on the RHS to match the type of the LHS, we're not
+   *   to operate on both independently but assign the expression to the
+   *   already know LHS
+   */
   if (_lhs_type == DOUBLE_TYPE && _rhs_type == INTEGER_TYPE)
-    _rhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _rhs, DOUBLE_TYPE, "_rhs_cast_to_double");
+    _rhs = BUILDER.CreateCast(llvm::Instruction::UIToFP, _rhs, DOUBLE_TYPE,
+                              "_rhs_cast_to_double");
 
   if (_lhs_type == INTEGER_TYPE && _rhs_type == DOUBLE_TYPE)
-    _rhs = BUILDER.CreateCast(llvm::Instruction::FPToSI, _lhs, INTEGER_TYPE, "_rhs_cast_to_int");
+    _rhs = BUILDER.CreateCast(llvm::Instruction::FPToSI, _lhs, INTEGER_TYPE,
+                              "_rhs_cast_to_int");
 
   if (_lhs_type == STRING_TYPE && _rhs_type != STRING_TYPE)
     _rhs = nullptr;
   return _rhs;
 }
 
+/**
+ * Construct: Method
+ * Name: NAssignment::code_generate
+ * Desc: This may only be used after an `NVariableDeclaration` so first we
+ *   check if the identifier exists within the current context and throw a
+ *   CodeGenException if not. Using the global IR builder (see `BUILDER`) a
+ *   store instruction is created linking the expression of `rhs` to the
+ *   identifier of `lhs`
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NAssignment::code_generate(CodeGenContext &ctx) {
   ValTypeTuple _lhs_tuple = ctx.get_local(lhs.val);
   llvm::Value *_lhs = std::get<llvm::Value *>(_lhs_tuple);
@@ -189,41 +298,92 @@ llvm::Value *NAssignment::code_generate(CodeGenContext &ctx) {
   return nullptr;
 }
 
-// Doing nothing `to` at the minute, all to stdout
+/**
+ * Construct: Method
+ * Name: NWrite::code_generate
+ * Desc: Create the type-specific call to `printf` from libc, this obviously
+ *   requires linking to libc to run, however the llvm::Module can be ran in
+ *   the execution engine within the program without explicit linking - the
+ *   LLVM IR output (.ll) can also be ran with LLI without explicit linking to
+ *   libc
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NWrite::code_generate(CodeGenContext &ctx) {
-  // Todo: Something for `string_type`
   llvm::Value *_exp = exp.code_generate(ctx);
   llvm::Type *_exp_type = _exp->getType();
-  if (_exp_type == DOUBLE_TYPE || _exp_type == INTEGER_TYPE) {
-    llvm::SmallVector<llvm::Value *, 2> printf_args;
+  llvm::SmallVector<llvm::Value *, 2> printf_args;
+  if (_exp_type == DOUBLE_TYPE || _exp_type == INTEGER_TYPE)
     printf_args.push_back(ctx.fmt_specifiers.at("numeric"));
-    printf_args.push_back(_exp);
-    return BUILDER.CreateCall(ctx.printf_function, printf_args, "_printf_call");
-  } else if (_exp_type == STRING_TYPE) {
-    llvm::SmallVector<llvm::Value *, 2> printf_args;
+  else if (_exp_type == STRING_TYPE)
     printf_args.push_back(ctx.fmt_specifiers.at("string"));
-    printf_args.push_back(_exp);
-    return BUILDER.CreateCall(ctx.printf_function, printf_args, "_printf_call");
-  }
-  throw CodeGenException("Write not yet implemented");
+  else
+    throw CodeGenException("Write not yet implemented");
+  printf_args.push_back(_exp);
+  return BUILDER.CreateCall(ctx.printf_function, printf_args, "_printf_call");
 }
 
+/**
+ * Construct: Method
+ * Name: NRead::code_generate
+ * Desc: See notes
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ * Notes:
+ *   - Not yet implemented
+ */
 llvm::Value *NRead::code_generate(CodeGenContext &ctx) {
   throw CodeGenException("Read not yet implemented");
 }
 
+/**
+ * Construct: Method
+ * Name: NReturnStatement::code_generate
+ * Desc: Uses the global IR builder (see `BUILDER`) to create a return
+ *   instruction (which returns from a function in a block). Multiple exit
+ *   points can be specified in a functionn however the LLVM module
+ *   verification will complain about this, e.g:
+ *   """
+ *     Terminator found in the middle of a basic block!
+ *     label %xxxx
+ *   """
+ *   However, this thankfully does not break the compilation.
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NReturnStatement::code_generate(CodeGenContext &ctx) {
   return BUILDER.CreateRet(exp.code_generate(ctx));
 }
 
+/**
+ * Construct: Method
+ * Name: NExpressionStatement::code_generate
+ * Desc: Uses the global IR builder (see `BUILDER`) to create a return
+ *   instruction (which returns from a function in a block). Multiple exit
+ *   points can be specified in a functionn however the LLVM module
+ *   verification will complain about this, e.g:
+ *   """
+ *     Terminator found in the middle of a basic block!
+ *     label %xxxx
+ *   """
+ *   However, this thankfully does not break the compilation.
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NExpressionStatement::code_generate(CodeGenContext &ctx) {
   return exp.code_generate(ctx);
 }
 
 /**
- * Zero initialization, kind of unnecessary but, hey
- *
- * TODO: String -> ""
+ * Construct: Function
+ * Name: zero_value_for
+ * Desc: Returns a pointer to the zero value (or equivalent) for the type
+ *   passed to it, so:
+ *     integer -> 0
+ *     float -> 0.0
+ *     string -> ""
+ * Args:
+ *   - type: The LLVM type for which a zero initializer should be created
  */
 static llvm::Value *zero_value_for(llvm::Type *type) {
   if (type == DOUBLE_TYPE)
@@ -235,6 +395,16 @@ static llvm::Value *zero_value_for(llvm::Type *type) {
   throw CodeGenException("Unknown variable type");
 }
 
+/**
+ * Construct: Method
+ * Name: NVariableDeclaration::code_generate
+ * Desc: Allocates space for a variable of the relevant type under the name of
+ *   the identifier in question. If the RHS is not null, an assignment (store
+ *   instruction) is used to initialize the variable, if the RHS value is null,
+ *   a zero value initializer is used
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NVariableDeclaration::code_generate(CodeGenContext &ctx) {
   llvm::Type *_lhs_type = type_of(type);
   llvm::Value *_lhs = BUILDER.CreateAlloca(_lhs_type, 0, lhs.val.c_str());
@@ -247,6 +417,15 @@ llvm::Value *NVariableDeclaration::code_generate(CodeGenContext &ctx) {
   return _lhs;
 }
 
+/**
+ * Construct: Method
+ * Name: NFunctionDeclaration::code_generate
+ * Desc: Creates a function under the identifier's name (`id`), create
+ *   variable declarations and optional initilizers for each of the function's
+ *   arguments, and generate the code for the function's block
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
 
   llvm::BasicBlock *_current_block = BUILDER.GetInsertBlock();
@@ -254,9 +433,17 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
   std::vector<llvm::Type *> arg_types;
   NVariableList::const_iterator it;
 
+  /**
+   * Create a vector of the function's argument's types for the function's
+   * prototype
+   */
   for (it = args.begin(); it != args.end(); it++)
     arg_types.push_back(type_of((*it)->type));
 
+  /**
+   * Create the function prototype with the arguments above and the specified
+   * return type
+   */
   llvm::FunctionType *_fn_type = llvm::FunctionType::get(
       type_of(type), llvm::makeArrayRef(arg_types), false);
 
@@ -266,12 +453,14 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
   llvm::BasicBlock *_block =
       llvm::BasicBlock::Create(LLVM_CTX, id.val + "__entry", _fn, 0);
 
+  /** Put the new block on the CodeGenBlock stack */
   ctx.push_block(_block);
 
   BUILDER.SetInsertPoint(_block);
 
   llvm::Function::arg_iterator arg_it = _fn->arg_begin();
 
+  /** Create the arguments for the function (not just the types this time) */
   for (it = args.begin(); it != args.end(); it++) {
     // llvm::Value *arg_val = (*it)->code_generate(ctx);
     llvm::Value *_arg_value = arg_it++;
@@ -284,6 +473,7 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
 
   block.code_generate(ctx);
 
+  /** After generating the code, pop the CodeGenBlock */
   ctx.pop_block();
 
   BUILDER.SetInsertPoint(_current_block);
@@ -291,6 +481,14 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
   return _fn;
 }
 
+/**
+ * Construct: Method
+ * Name: NFunctionCall::code_generate
+ * Desc: Create a call to an existing function using the global LLVM IR
+ *   builder (see `BUILDER`)
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NFunctionCall::code_generate(CodeGenContext &ctx) {
   llvm::Function *fn = ctx.module->getFunction(id.val.c_str());
 
@@ -308,6 +506,18 @@ llvm::Value *NFunctionCall::code_generate(CodeGenContext &ctx) {
 
 /* ------ constructs ------ */
 
+/**
+ * Construct: Method
+ * Name: NIfStatement::code_generate
+ * Desc: Creates a compare of some sort and then a conditional branch. If an
+ *   "else" (`els`) statement is present, including "else if"s, then generate
+ *   the IR for those too.
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ * Notes:
+ *   - Multiple "else if" blocks will essentially call this function
+ *     recursively managing the insert/current blocks each time
+ */
 llvm::Value *NIfStatement::code_generate(CodeGenContext &ctx) {
 
   llvm::Value *_cond = cond.code_generate(ctx);
@@ -345,10 +555,27 @@ llvm::Value *NIfStatement::code_generate(CodeGenContext &ctx) {
   return nullptr;
 }
 
+/**
+ * Construct: Method
+ * Name: NElseStatement::code_generate
+ * Desc: The "else" is simply the last block before returning to the parent
+ *   block, therefore we just call the NBlock::code_generate method
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NElseStatement::code_generate(CodeGenContext &ctx) {
   return block.code_generate(ctx);
 }
 
+/**
+ * Construct: Method
+ * Name: NWhileStatement::code_generate
+ * Desc: Splits to a new block (the conditional block) and branches
+ *   conditionally on the truthfulness of the condition (`cond`) to either
+ *   the statement's block or to the continuation of the parent block
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NWhileStatement::code_generate(CodeGenContext &ctx) {
   llvm::Function *_fn = BUILDER.GetInsertBlock()->getParent();
   llvm::BasicBlock *_while =
@@ -376,6 +603,15 @@ llvm::Value *NWhileStatement::code_generate(CodeGenContext &ctx) {
   return nullptr;
 }
 
+/**
+ * Construct: Method
+ * Name: NUntilStatement::code_generate
+ * Desc: Splits to a new block (the conditional block) and branches
+ *   conditionally on the falsity of the condition (`cond`) to either the
+ *   statement's block or to the continuation of the parent block
+ * Args:
+ *   - ctx: The CodeGenContext instance
+ */
 llvm::Value *NUntilStatement::code_generate(CodeGenContext &ctx) {
   llvm::Function *_fn = BUILDER.GetInsertBlock()->getParent();
   llvm::BasicBlock *_until =

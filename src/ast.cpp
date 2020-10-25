@@ -1,15 +1,30 @@
 #include "ast.hpp"
 
-// Yes, this is all bad practice...
+/**
+ * Construct: Module
+ * Name: src/ast.cpp
+ * Desc: These are the printing methods conforming to an ostream, it prints a
+ *   JSON-ish format of the AST
+ * Notes:
+ *   - Yes, this is a lot of bad practice...
+ */
 
-const int INDENT_WIDTH = 2;
-
+/**
+ * Construct: Struct
+ * Name: Indent
+ * Desc: Management of the "current" indent level of the AST Management of the
+ *   "current" indent level of the AST while printing
+ * Members:
+ *   - indent_width: Width of each indent
+ *   - ilvl: The "current" number of indents
+ */
 struct Indent {
+  int indent_width = 2;
   int ilvl = 0;
   std::string indent() { return std::string(ilvl, ' '); }
-  void inc(int num = 1) { ilvl += (num * INDENT_WIDTH); }
+  void inc(int num = 1) { ilvl += (num * indent_width); }
   void dec(int num = 1) {
-    int width = num * INDENT_WIDTH;
+    int width = num * indent_width;
     if (ilvl >= width)
       ilvl -= width;
   }

@@ -39,6 +39,7 @@ counter is an integer of value 0.
 
 until counter is equal to number_of_repetitions plus 1,
   output is fizz_buzz called with counter as an argument.
+  # fizz_buzz called with counter as an argument.
   write counter to stdout.
   write ': ' to stdout.
   write output to stdout.

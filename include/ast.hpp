@@ -12,6 +12,11 @@ class NStatement;
 class NExpression;
 class CodeGenContext;
 
+/**
+ * Construct: Enum
+ * Name: OPS
+ * Desc: The list of binary and unary, arithmetic and boolean operations
+ */
 enum OPS {
   OP_EQUAL_TO,
   OP_NOT_EQUAL_TO,
@@ -36,6 +41,12 @@ typedef std::vector<NExpression *> NExpressionList;
 
 /* ------------- Base Nodes ------------- */
 
+/**
+ * Construct: Class
+ * Name: Node
+ * Desc: The generic base-node used in the formation of the AST, all other
+ *   nodes are based on this one
+ */
 class Node {
 protected:
   virtual void print(std::ostream &) const = 0;
@@ -49,12 +60,33 @@ public:
   }
 };
 
+/**
+ * Construct: Class
+ * Name: NExpression
+ * Desc: `Node` is split into two subclasses, this subclass is the parent of all
+ *   expression nodes
+ * Example: Identifiers, like `x`, are expressions
+ */
 class NExpression : public Node {};
 
+/**
+ * Construct: Class
+ * Name: NStatement
+ * Desc: `Node` is split into two subclasses, this subclass is the parent of all
+ *   statement nodes
+ * Example: Assignments, like `x = y`, are expressions
+ */
 class NStatement : public Node {};
 
 /* -------- Based on NExpression -------- */
 
+/**
+ * Construct: Class
+ * Name: NInteger
+ * Desc: Simple integer value node
+ * Members:
+ *   - val: The 64-bit, signed integer value
+ */
 class NInteger : public NExpression {
 public:
   std::int64_t val;
@@ -63,6 +95,13 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NFloat
+ * Desc: Simple floating point value node
+ * Members:
+ *   - val: The 64-bit floating point value (double)
+ */
 class NFloat : public NExpression {
 public:
   double val;
@@ -71,6 +110,13 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NString
+ * Desc: String value node, implemented with a C++ std::string
+ * Members:
+ *   - val: The C++ string value
+ */
 class NString : public NExpression {
 public:
   std::string val;
@@ -82,6 +128,14 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NIdentifier
+ * Desc: Identifier node, for example in the phrase `x = y`, both `x` and `y`
+ *   would be represented in the AST by NIdentifiers
+ * Members:
+ *   - val: The name of the identifier
+ */
 class NIdentifier : public NExpression {
 public:
   std::string val;
@@ -91,6 +145,15 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NFunctionCall
+ * Desc: Node containing any function call
+ * Members:
+ *   - id: The name of the function to be called
+ *   - args: Vector of children of NExpression representing the arguments to
+ *     be passed to the function
+ */
 class NFunctionCall : public NExpression {
 public:
   NIdentifier &id;
@@ -102,6 +165,15 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NUnaryExpression
+ * Desc: Node containing a unary operation and the expression to which it is
+ *   applied
+ * Members:
+ *   - op: The unary operation to be used (see `OPS`)
+ *   - rhs: Child of NExpression to which the `op` should be applied
+ */
 class NUnaryExpression : public NExpression {
 public:
   int op;
@@ -111,6 +183,16 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NBinaryExpression
+ * Desc: Node containing the left and right expressions and the operation of a
+ *   binary operation
+ * Members:
+ *   - op: The binary operation to be used (see `OPS`)
+ *   - lhs: The left hand side of the binary operation
+ *   - rhs: The right hand side of the binary operation
+ */
 class NBinaryExpression : public NExpression {
 public:
   int op;
@@ -122,6 +204,15 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NBlock
+ * Desc: An NExpression-based container of statments representing a "block" of
+ *   code
+ * Members:
+ *   - stmts: Vector of children of NStatement comprising the statements of
+ *     the block
+ */
 class NBlock : public NExpression {
 public:
   NStatementList stmts;
@@ -130,6 +221,14 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NAssignment
+ * Desc: Node representing an assignment of an expression to an identifier
+ * Members:
+ *   - lhs: The identifier to be assigned a vlaue
+ *   - rhs: The expression to assign to `lhs`
+ */
 class NAssignment : public NStatement {
 public:
   NIdentifier &lhs;
@@ -141,6 +240,16 @@ public:
 
 /* -------- Based on NStatement --------- */
 
+/**
+ * Construct: Class
+ * Name: NRead
+ * Desc: Node for a `read` statement
+ * Members:
+ *   - from: The source from which to read data
+ *   - rhs: The identifier into which the data should be read
+ * notes:
+ *   - Not yet implemented
+ */
 class NRead : public NStatement {
 public:
   NExpression &from;
@@ -150,6 +259,16 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NWrite
+ * Desc: Node for a `write` statement
+ * Members:
+ *   - exp: The expression to write
+ *   - to: The sink to which the data should be written
+ * notes:
+ *   - The `to` concept is not yet implemented, all `NWrite`s go to stdout
+ */
 class NWrite : public NStatement {
 public:
   NExpression &exp;
@@ -159,6 +278,13 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NReturnStatement
+ * Desc: Node representing a return statement from a function
+ * Members:
+ *   - exp: The expression to return from the function
+ */
 class NReturnStatement : public NStatement {
 public:
   NExpression &exp;
@@ -167,6 +293,17 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NExpressionStatement
+ * Desc: Node representing an expression which can be used as a statment
+ * Members:
+ *   - exp - The expression to run as though it were a statement
+ * Example: A function call without an assignment is only an expression, to be
+ *   able to add it to a block, this must be interpreted as a statement. In
+ *   this example, this function call would be added to an
+ *   `NExpressionStatement`
+ */
 class NExpressionStatement : public NStatement {
 public:
   NExpression &exp;
@@ -175,6 +312,17 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NVariableDeclaration
+ * Desc: Node representing a variable declaration and, optionally, an
+ *   assignment
+ * Members:
+ *   - type: The type of the variable to be declared
+ *   - lhs: The identifier of the variable to be declared
+ *   - rhs: The expression used in initialization, `nullptr` if no
+ *     initialization is wanted
+ */
 class NVariableDeclaration : public NStatement {
 public:
   const NIdentifier &type;
@@ -190,14 +338,15 @@ public:
   virtual void print(std::ostream &) const;
 };
 
-class NElseStatement : public NStatement {
-public:
-  NBlock &block;
-  NElseStatement(NBlock &block) : block(block) {}
-  virtual llvm::Value *code_generate(CodeGenContext &);
-  virtual void print(std::ostream &) const;
-};
-
+/**
+ * Construct: Class
+ * Name: NUntilStatement
+ * Desc: Node representing an `until` statement, which is essentially the
+ *   inverse of a `while` statement
+ * Members:
+ *   - cond: The condition under which the statements of `block` will be ran
+ *   - block: The block of statement to run if the condition is met
+ */
 class NUntilStatement : public NStatement {
 public:
   NExpression &cond;
@@ -208,6 +357,15 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NWhileStatement
+ * Desc: Node representing a `while` statement, which is essentially the
+ *   inverse of an `until` statement
+ * Members:
+ *   - cond: The condition under which the statements of `block` will be ran
+ *   - block: The block of statement to run if the condition is met
+ */
 class NWhileStatement : public NStatement {
 public:
   NExpression &cond;
@@ -218,6 +376,32 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NElseStatement
+ * Desc: Node representing the "else" block of an `if` statement
+ * Members:
+ *   - block: The block of statements of the "else"
+ */
+class NElseStatement : public NStatement {
+public:
+  NBlock &block;
+  NElseStatement(NBlock &block) : block(block) {}
+  virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual void print(std::ostream &) const;
+};
+
+/**
+ * Construct: Class
+ * Name: NIfStatement
+ * Desc: Node representing an `if` statement
+ * Members:
+ *   - cond: The condition under which the statements of `block` will be ran
+ *   - block: The block of statement to run if the condition is met
+ *   - els: The `else` portion of the if, this commonly either another
+ *     NIfStatement which can be done repeated to implement `else if` logic;
+ *     or, an NElseStatement for the final `else`
+ */
 class NIfStatement : public NStatement {
 public:
   NExpression &cond;
@@ -232,6 +416,16 @@ public:
   virtual void print(std::ostream &) const;
 };
 
+/**
+ * Construct: Class
+ * Name: NFunctionDeclaration
+ * Desc: Node representing the declaration of a function and it's statements
+ * Members:
+ *   - id: The function identifier
+ *   - args: Vector of NVariableDeclaration representing the variable
+ *     arguments created when the function is called
+ *   - block: The block of statements to be ran upon function call
+ */
 class NFunctionDeclaration : public NStatement {
 public:
   const NIdentifier &type;

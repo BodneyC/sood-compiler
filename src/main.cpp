@@ -12,6 +12,7 @@ extern int yyparse();
 extern FILE *yyin;
 extern NBlock *prg;
 
+/** Maximum length of back-trace to be displayed by SPDLog */
 const int BT_VOL = 32;
 
 int main(int argc, char **argv) {
@@ -21,8 +22,16 @@ int main(int argc, char **argv) {
 
   SoodArgs args = parse_args(argc, argv);
 
+  /**
+   * If an input file is specified on the command line, use that as the source
+   *   of Sood code
+   */
   if (args.input != "") {
     spdlog::debug("Reading input from file {}", args.input);
+    /**
+     * The rest of this block verifies that the input file both exists and is
+     *   not empty
+     */
     if (!(yyin = std::fopen(args.input.c_str(), "r"))) {
       spdlog::error("Input file {} does not exist, exiting...", args.input);
       std::exit(1);
@@ -32,7 +41,14 @@ int main(int argc, char **argv) {
       spdlog::warn("Input file {} is empty", args.input);
     fseek(yyin, 0, SEEK_SET);
   }
+
+  /** Parse the source code using the generated parser from Bison */
   yyparse();
+
+  /**
+   * If an input file was specified, we are now finished with it and can
+   *   close it
+   */
   if (args.input != "")
     std::fclose(yyin);
 
@@ -41,6 +57,10 @@ int main(int argc, char **argv) {
     std::cout << *prg << std::endl;
   }
 
+  /**
+   * If the option has been given to stop after generating the AST, the
+   *   string representation of the AST is written to the output CLI option
+   */
   if (args.stop_after_ast) {
     spdlog::info("Writing AST to {}...", args.output);
     std::ofstream ast_out(args.output);
@@ -63,6 +83,10 @@ int main(int argc, char **argv) {
     ctx.print_llvm_ir();
   }
 
+  /**
+   * If the option has been given to stop after generating the LLVM IR, the
+   *   IR code is written to the output CLI option
+   */
   if (args.stop_after_llvm_ir) {
     spdlog::info("Writing LLVM IR to {}...", args.output);
     ctx.print_llvm_ir_to_file(args.output);
@@ -70,6 +94,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  /** Run the code (the LLVM module's main function) from within the compiler */
   if (args.run_llvm_ir) {
     spdlog::info("Running LLVM module...");
     ctx.code_run();
@@ -77,9 +102,16 @@ int main(int argc, char **argv) {
 
   std::string obj_fname = args.output;
 
+  /**
+   * If the option has been given to compile the code to an executable, then we
+   *   could but shouldn't use the output CLI option (filename) for the object
+   *   code as well as the name of the executable, so, we generate a temporary
+   *   file containing the object code for use in the GCC or LD sub-process to
+   *   create the resulting binary
+   */
   if (!args.stop_after_object) {
     auto pos = obj_fname.rfind("/");
-    if(pos != std::string::npos)
+    if (pos != std::string::npos)
       obj_fname.erase(0, pos + 1);
     obj_fname = "/tmp/" + obj_fname + ".o.XXXXXX";
     char *obj_fname_c = strdup(obj_fname.c_str());
@@ -98,7 +130,13 @@ int main(int argc, char **argv) {
     return 0;
 
   /**
-   * Note: This works but I may as well just use gcc
+   * Sub-process to GCC (or LD) to link the object with the C runtime
+   *   libraries and, optioinally, libc
+   */
+  subprocess::popen gcc_cmd("gcc",
+                            {"-o", args.output.c_str(), obj_fname.c_str()});
+  /*
+   * Note: This also works but I may as well just use GCC
    *   ld --verbose -L/usr/lib -lc \
    *     -dynamic-linker \
    *     /lib64/ld-linux-x86-64.so.2 \
@@ -110,8 +148,6 @@ int main(int argc, char **argv) {
    *     -o <binary> \
    *     /usr/lib/crtn.o
    */
-  subprocess::popen gcc_cmd("gcc",
-                            {"-o", args.output.c_str(), obj_fname.c_str()});
   if (gcc_cmd.wait()) {
     spdlog::error("GCC compilation failed:");
     std::cerr << gcc_cmd.stderr().rdbuf() << std::endl;

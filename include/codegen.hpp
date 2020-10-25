@@ -7,9 +7,7 @@
 
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
-// #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/IR/CallingConv.h>
-// #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/IRPrintingPasses.h>
@@ -51,6 +49,22 @@ typedef std::tuple<llvm::Value *, llvm::Type *> ValTypeTuple;
 
 llvm::Constant *get_i8_str_ptr(char const *, llvm::Twine const &);
 
+/**
+ * Construct: Class
+ * Name: CodeGenBlock
+ * Desc: Context information for any given block
+ * Members:
+ *   - block: A pointer to the LLVM block corresponding to the CodeGenBlock
+ *     instance
+ *   - ret_val: A pointer to the return value of the block
+ *   - locals: A list of the in-scope variables for the block
+ * Notes:
+ *   - The "global" function's locals are not currently available to
+ *     child-blocks, this is yet to be implemented
+ *   - `ret_val` is not currently used. But, as LLVM doesn't seem to like
+ *     multiple return statements in a function, this may be used at one point
+ *     and a single `return` enforced
+ */
 class CodeGenBlock {
 public:
   llvm::BasicBlock *block;
@@ -58,6 +72,19 @@ public:
   std::map<std::string, ValTypeTuple> locals;
 };
 
+/**
+ * Construct: Class
+ * Name: CodeGenContext
+ * Desc: Used to manage the AST -> LLVM IR -> Object phases of the compiler
+ * Members:
+ *   - blocks - Stack of CodeGenBlock* referring to the block in the Sood
+ *     source code
+ *   - fn_main - Pointer to the "global" functino of the Sood source code
+ *   - module - The code is loaded to this object from the root node of the AST
+ *   - printf_function - Creation of the `printf` function in the resulting IR,
+ *     linked to libc after code generation
+ *   - fmt_specifiers - Global string references for `"%s"` and `"%d"`
+ */
 class CodeGenContext {
   std::stack<CodeGenBlock *> blocks;
   llvm::Function *fn_main;
