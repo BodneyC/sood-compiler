@@ -50,8 +50,8 @@ typedef std::tuple<llvm::Value *, llvm::Type *> ValTypeTuple;
 llvm::Constant *get_i8_str_ptr(char const *, llvm::Twine const &);
 
 /**
- * Construct: Class
  * Name: CodeGenBlock
+ * Construct: Class
  * Desc: Context information for any given block
  * Members:
  *   - block: A pointer to the LLVM block corresponding to the CodeGenBlock
@@ -73,8 +73,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: CodeGenContext
+ * Construct: Class
  * Desc: Used to manage the AST -> LLVM IR -> Object phases of the compiler
  * Members:
  *   - blocks - Stack of CodeGenBlock* referring to the block in the Sood

@@ -3,23 +3,23 @@
 #include "parser.hpp"
 
 /**
- * Construct: Global variable
  * Name: LLVM_CTX
+ * Construct: Global variable
  * Desc: The LLVM context of the program/module
  */
 llvm::LLVMContext LLVM_CTX;
 
 /**
- * Construct: Global variable
  * Name: BUILDER
+ * Construct: Global variable
  * Desc: The LLVM IR building utility constructed under the global context
  *   (see `LLVM_CTX`)
  */
 llvm::IRBuilder<> BUILDER(LLVM_CTX);
 
 /**
- * Construct: Global variable
  * Name: DOUBLE_TYPE, STRING_TYPE, INTEGER_TYPE
+ * Construct: Global variable
  * Desc: To save from frequently calling to `llvm::Type::getXXXTy(LLVM_CTX)`,
  *   these are created once at compiler startup
  */
@@ -28,8 +28,8 @@ llvm::Type *STRING_TYPE = llvm::Type::getInt8PtrTy(LLVM_CTX);
 llvm::Type *INTEGER_TYPE = llvm::Type::getInt64Ty(LLVM_CTX);
 
 /**
- * Construct: Function
  * Name: get_i8_str_ptr
+ * Construct: Function
  * Desc: Create a global string and return a pointer to it, used to naively
  *   implement strings in the language
  * Args:
@@ -47,8 +47,8 @@ CodeGenContext::CodeGenContext(std::string module_name) {
 }
 
 /**
- * Construct: Method
  * Name: CodeGenContext::create_fn_printf
+ * Construct: Method
  * Desc: Create the reference to the `printf` function will can be called by
  *   the Sood program and requires linking to libc to run as an executable
  */
@@ -67,8 +67,8 @@ llvm::Function *CodeGenContext::create_fn_printf() {
 }
 
 /**
- * Construct: Method
  * Name: CodeGenContext::code_generate
+ * Construct: Method
  * Desc: Core function used to populate the module based on the AST generated
  *   earlier
  * Args:
@@ -99,8 +99,8 @@ void CodeGenContext::code_generate(NBlock &root) {
 }
 
 /**
- * Construct: Method
  * Name: CodeGenContext::verify_module
+ * Construct: Method
  * Desc: Optionally verify the LLVM module
  */
 void CodeGenContext::verify_module() {
@@ -108,15 +108,15 @@ void CodeGenContext::verify_module() {
 }
 
 /**
- * Construct: Method
  * Name: CodeGenContext::print_llvm_ir
+ * Construct: Method
  * Desc: Prints the generated LLVM IR to the console
  */
 void CodeGenContext::print_llvm_ir() { module->print(llvm::outs(), nullptr); }
 
 /**
- * Construct: Method
  * Name: CodeGenContext::print_llvm_ir_to_file
+ * Construct: Method
  * Desc: Writes the generated LLVM IR to the specified file
  * Args:
  *   - filename: String reference to the filename
@@ -128,8 +128,8 @@ void CodeGenContext::print_llvm_ir_to_file(std::string &filename) {
 }
 
 /**
- * Construct: Method
  * Name: CodeGenContext::code_run
+ * Construct: Method
  * Desc: Runs the main function of the module with the LLVM execution engine
  */
 llvm::GenericValue CodeGenContext::code_run() {
@@ -142,8 +142,8 @@ llvm::GenericValue CodeGenContext::code_run() {
 }
 
 /**
- * Construct: Method
  * Name: CodeGenContext::write_object
+ * Construct: Method
  * Desc: Optionally write module, as native object code, to the specified
  *   filename
  * Args:

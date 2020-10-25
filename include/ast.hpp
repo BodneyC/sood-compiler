@@ -13,8 +13,8 @@ class NExpression;
 class CodeGenContext;
 
 /**
- * Construct: Enum
  * Name: OPS
+ * Construct: Enum
  * Desc: The list of binary and unary, arithmetic and boolean operations
  */
 enum OPS {
@@ -42,8 +42,8 @@ typedef std::vector<NExpression *> NExpressionList;
 /* ------------- Base Nodes ------------- */
 
 /**
- * Construct: Class
  * Name: Node
+ * Construct: Class
  * Desc: The generic base-node used in the formation of the AST, all other
  *   nodes are based on this one
  */
@@ -61,8 +61,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NExpression
+ * Construct: Class
  * Desc: `Node` is split into two subclasses, this subclass is the parent of all
  *   expression nodes
  * Example: Identifiers, like `x`, are expressions
@@ -70,8 +70,8 @@ public:
 class NExpression : public Node {};
 
 /**
- * Construct: Class
  * Name: NStatement
+ * Construct: Class
  * Desc: `Node` is split into two subclasses, this subclass is the parent of all
  *   statement nodes
  * Example: Assignments, like `x = y`, are expressions
@@ -81,8 +81,8 @@ class NStatement : public Node {};
 /* -------- Based on NExpression -------- */
 
 /**
- * Construct: Class
  * Name: NInteger
+ * Construct: Class
  * Desc: Simple integer value node
  * Members:
  *   - val: The 64-bit, signed integer value
@@ -96,8 +96,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NFloat
+ * Construct: Class
  * Desc: Simple floating point value node
  * Members:
  *   - val: The 64-bit floating point value (double)
@@ -111,8 +111,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NString
+ * Construct: Class
  * Desc: String value node, implemented with a C++ std::string
  * Members:
  *   - val: The C++ string value
@@ -129,8 +129,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NIdentifier
+ * Construct: Class
  * Desc: Identifier node, for example in the phrase `x = y`, both `x` and `y`
  *   would be represented in the AST by NIdentifiers
  * Members:
@@ -146,8 +146,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NFunctionCall
+ * Construct: Class
  * Desc: Node containing any function call
  * Members:
  *   - id: The name of the function to be called
@@ -166,8 +166,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NUnaryExpression
+ * Construct: Class
  * Desc: Node containing a unary operation and the expression to which it is
  *   applied
  * Members:
@@ -184,8 +184,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NBinaryExpression
+ * Construct: Class
  * Desc: Node containing the left and right expressions and the operation of a
  *   binary operation
  * Members:
@@ -205,8 +205,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NBlock
+ * Construct: Class
  * Desc: An NExpression-based container of statments representing a "block" of
  *   code
  * Members:
@@ -222,8 +222,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NAssignment
+ * Construct: Class
  * Desc: Node representing an assignment of an expression to an identifier
  * Members:
  *   - lhs: The identifier to be assigned a vlaue
@@ -241,8 +241,8 @@ public:
 /* -------- Based on NStatement --------- */
 
 /**
- * Construct: Class
  * Name: NRead
+ * Construct: Class
  * Desc: Node for a `read` statement
  * Members:
  *   - from: The source from which to read data
@@ -260,8 +260,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NWrite
+ * Construct: Class
  * Desc: Node for a `write` statement
  * Members:
  *   - exp: The expression to write
@@ -279,8 +279,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NReturnStatement
+ * Construct: Class
  * Desc: Node representing a return statement from a function
  * Members:
  *   - exp: The expression to return from the function
@@ -294,8 +294,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NExpressionStatement
+ * Construct: Class
  * Desc: Node representing an expression which can be used as a statment
  * Members:
  *   - exp - The expression to run as though it were a statement
@@ -313,8 +313,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NVariableDeclaration
+ * Construct: Class
  * Desc: Node representing a variable declaration and, optionally, an
  *   assignment
  * Members:
@@ -339,8 +339,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NUntilStatement
+ * Construct: Class
  * Desc: Node representing an `until` statement, which is essentially the
  *   inverse of a `while` statement
  * Members:
@@ -358,8 +358,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NWhileStatement
+ * Construct: Class
  * Desc: Node representing a `while` statement, which is essentially the
  *   inverse of an `until` statement
  * Members:
@@ -377,8 +377,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NElseStatement
+ * Construct: Class
  * Desc: Node representing the "else" block of an `if` statement
  * Members:
  *   - block: The block of statements of the "else"
@@ -392,8 +392,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NIfStatement
+ * Construct: Class
  * Desc: Node representing an `if` statement
  * Members:
  *   - cond: The condition under which the statements of `block` will be ran
@@ -417,8 +417,8 @@ public:
 };
 
 /**
- * Construct: Class
  * Name: NFunctionDeclaration
+ * Construct: Class
  * Desc: Node representing the declaration of a function and it's statements
  * Members:
  *   - id: The function identifier

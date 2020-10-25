@@ -1,8 +1,8 @@
 #include "ast.hpp"
 
 /**
- * Construct: Module
  * Name: src/ast.cpp
+ * Construct: Module
  * Desc: These are the printing methods conforming to an ostream, it prints a
  *   JSON-ish format of the AST
  * Notes:
@@ -10,8 +10,8 @@
  */
 
 /**
- * Construct: Struct
  * Name: Indent
+ * Construct: Struct
  * Desc: Management of the "current" indent level of the AST Management of the
  *   "current" indent level of the AST while printing
  * Members:
