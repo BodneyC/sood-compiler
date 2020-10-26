@@ -27,8 +27,8 @@ void yyerror(const char *s) {
 "is less than or equal to" TOKEN(OP_LESS_THAN_EQUAL_TO); return TLE;
 "is more than"             TOKEN(OP_MORE_THAN);          return TMT;
 "is more than or equal to" TOKEN(OP_MORE_THAN_EQUAL_TO); return TME;
-"is not"                   TOKEN(OP_NOT);                return TNOT;
-"is negative"              TOKEN(OP_NEGATIVE);           return TNEG;
+"not"                      TOKEN(OP_NOT);                return TNOT;
+"negative"                 TOKEN(OP_NEGATIVE);           return TNEG;
 "also"                     TOKEN(OP_ALSO);               return TALS;
 "alternatively"            TOKEN(OP_ALTERNATIVELY);      return TALT;
 
