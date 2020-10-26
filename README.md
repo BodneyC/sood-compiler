@@ -97,7 +97,7 @@ And output (`-o`) is applied to whichever `stop-after-xxx` option is passed. Alt
 - [Function Declaration](#function-declaration)
 - [Function Calls](#function-calls)
 - [Control flow](#control-flow)
-- [Input/Ouput](#input---ouput)
+- [Input/Output](#inputoutput)
 
 ### Comments
 
