@@ -289,11 +289,17 @@ would be translated to `\nThis is\na multiline string`.
 
 Very few escape characters are processed, mainly due to my laziness, these include `\n`, `\t`, and `\r`. Double-backslashes are also parsed, so `\\n` would come out as `\n` literally.
 
-So, `this is a\nstring`, would evaualte to:
+So, `this is a\nstring`, would evaluate to:
 
 ```txt
 this is a
 string
+```
+
+Where, `this is a\\nstring`, would evaluate to:
+
+```txt
+this is a\nstring
 ```
 
 ### Statements
