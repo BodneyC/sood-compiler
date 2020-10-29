@@ -12,7 +12,7 @@ Sood is a (very) minimal general purpose programming language based on some fair
 - [The Compiler](#the-compiler)
   - [Installation](#installation)
   - [Usage](#usage)
-  - [Outputs](#outputs)
+  - [Compiler Outputs](#compiler-outputs)
 - [Language Specification](#language-specification)
 - [Language Support](#language-support)
 - [Mini-Disclaimer](#mini-disclaimer)
@@ -100,7 +100,7 @@ I still thought that I would use my DIY lexer and parser, but after trying these
 
 Perhaps I lose a few deep customizations in using existing tools to get the job done quickly and more efficiently, but I found that I was able to implement new ideas much much quicker than I could using the previous method. For example, a small change in the grammar (which hadn't been finalised early in the project) often took a lot of code re-routing probably due to poor design on my part. Compare that to just changing a line in the `.y` file and recompiling, it was a big time save.
 
-### Outputs
+### Compiler Outputs
 
 The compiler has an option to output the resulting code/file at each stage of compilation from source to executable.
 
