@@ -43,16 +43,22 @@ Tommy is an integer of value 1337.
 
 Both are sentences, but the programmatic meaning is only obvious in Sood.
 
-## The Compiler
+## Install
 
+The project has a few dependencies
 
-There have been a few iterations of the compiler
+- [Bison](https://www.gnu.org/software/bison/) version: 3.7.2
+- [Flex](https://github.com/westes/flex/) version: 2.6.4
+- [LLVM](https://llvm.org/) version: 10.0.1
+- [Spdlog](https://github.com/gabime/spdlog) version: 1.8.1
 
-### Install
+Should be simple enough, but I know it never goes down like...
 
-#### Dependencies
+```sh
+cmake . && make
+```
 
-### Usage
+## Usage
 
 CLI library in use is the wonderful, header-only, [CXXOpts](https://github.com/jarro2783/cxxopts).
 
@@ -77,13 +83,126 @@ In which, input file may either be specified as the value of the `-i` options, o
 
 And output (`-o`) is applied to whichever `stop-after-xxx` option is passed. Alternatively, this is the name of the resulting executable binary file.
 
+## The Compiler
+
+There have been a few iterations of the compiler. Initially, I was doing everything myself including lexing, parsing, and writing (very architecture dependent) binary. I finished the lexer, finished the parser, began to write the code generation... and then decided that it was too big a task for what is essentially, a toy language.
+
+In looking at the various tools to help out with the AST -> executable phase, I found a couple of options:
+
+- Transpilation
+- Generating a byte-code of sort and developing a VM for it
+
+It was only by looking into the second option that I recalled [LLVM](https://llvm.org/) from my uni days. A little more digging revealed that this would be the perfect system with which to write Sood - the code was already in C++, I had previous experience with LLVM and had written a few play-programs in LLVM's intermediate representation language, aptly named LLVM IR, and I remembered that I had wanted to do more with it.
+
+This seemed the perfect fit the project and in finding this, I thought that perhaps the DIY approach to the other components was not the best either. This thought led me to two tools which I was sure I wouldn't use at the beginning of the project: [Flex](https://github.com/westes/flex/), a very popular lexer-generator; and [Bison](https://www.gnu.org/software/bison/) a very popular parser-generator.
+
+I still thought that I would use my DIY lexer and parser, but after trying these latter two tools, I found that they were better and more capable versions of the modules I had written from scratch.
+
+Perhaps I lose a few deep customizations in using existing tools to get the job done quickly and more efficiently, but I found that I was able to implement new ideas much much quicker than I could using the previous method. For example, a small change in the grammar (which hadn't been finalised early in the project) often took a lot of code re-routing probably due to poor design on my part. Compare that to just changing a line in the `.y` file and recompiling, it was a big time save.
+
 ### Outputs
+
+The compiler has an option to output the resulting code/file at each stage of compilation from source to executable.
 
 #### AST
 
+The first task was to use the lexer and parser to generate an AST, this is a data structure representing each statmement and expression in the relevant order and within the relevant block.
+
+As an example, the Sood code:
+
+```sood
+# tests/helloworld-fn.sood
+
+my_function is a function of type integer and of statements,
+  write 'Hello world\n' to stdout.
+  return 0...
+
+my_function called with no arguments.
+```
+
+creates the AST:
+
+```sood-ast
+block: {
+  func_decl {
+    type: ident(integer),
+    name: ident(my_function),
+
+    block: {
+      write { exp: str(Hello world\n), to: ident(stdout) }
+
+      return { exp: int(0) }
+    }
+  }
+
+func_call {
+    id: ident(my_function)
+  }
+}
+```
+
+The command in use here is:
+
+```sh
+sood -S -o tests/helloworld-fn.sood-ast tests/helloworld-fn.sood
+```
+
 #### LLVM IR
 
+As we are making use of the [LLVM C++ API](https://llvm.org/docs/ProgrammersManual.html), we are generating [LLVM IR](https://llvm.org/docs/LangRef.html), so that same file (`tests/helloworld-fn.vim`) would generate the LLVM IR:
+
+```llvm-ir
+; ModuleID = 'mod_main'
+source_filename = "mod_main"
+
+@numeric_fmt_spc = private unnamed_addr constant [3 x i8] c"%d\00", align
+1
+@string_fmt_spc = private unnamed_addr constant [3 x i8] c"%s\00", align 1
+@l_str = private unnamed_addr constant [13 x i8] c"Hello world\0A\00", ali
+gn 1
+
+declare i32 @printf(i8*, ...)
+
+define void @main() {
+entry:
+  %_f_call = call i64 @my_function()
+  ret void
+}
+
+define internal i64 @my_function() {
+my_function__entry:
+  %_printf_call = call i32 (i8*, ...) @printf(i8* getelementptr inbounds (
+[3 x i8], [3 x i8]* @string_fmt_spc, i32 0, i32 0), i8* getelementptr inbo
+unds ([13 x i8], [13 x i8]* @l_str, i32 0, i32 0))
+  ret i64 0
+}
+```
+
+Where the `printf` function is later linked from libc at compilation.
+
+The command in use here is:
+
+```sh
+sood -C -o tests/helloworld-fn.ll tests/helloworld-fn.sood
+```
+
+__Note__: I know this isn't tremendous IR code, but it will hopefully be improved in time and it's functional right now.
+
 #### Object
+
+I'm obvious not going to dump some native object file to give as an example here, but the command to produce the file `tests/helloworld-fn.o` (the object file), would be:
+
+```sh
+sood -O -o tests/helloworld-fn.o tests/helloworld-fn.sood
+```
+
+### Executable
+
+Finally is the native executable, this is the default function of the program and so the command to produce the executable for `helloworld-fn` is:
+
+```sh
+sood -o tests/helloworld-fn tests/helloworld-fn.sood
+```
 
 ## Language Specification
 
@@ -397,8 +516,11 @@ write 'Hello world\n' to caterpillars.
 
 ## Text Editor Language Support
 
-It is only Vim... as I only use Vim..., see [here](https://github.com/BodneyC/sood-vim).
+There is only support for the [Vim](https://www.vim.org/) editor as, realistically, it's the editor I use most often... well, it's the only editor I use.
 
+A language plugin for Sood, for Vim, can be found [here](https://github.com/BodneyC/sood-vim).
+
+It's adds syntax for `.sood` and `.sood-ast` files (see the [compiler outputs section](#compiler-outputs)). It also adds indent support for `.sood` files.
 
 ## Mini-Disclaimer
 
