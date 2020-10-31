@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 lli --entry-function=main
 
 llc --filetype=obj --relocation-model=pic -o tests/helloworld.sood.{o,ll}
@@ -26,19 +25,19 @@ clang tests/helloworld.sood.s -o tests/helloworld # this works
   -dynamic-linker \
   /lib64/ld-linux-x86-64.so.2 \
   -o tests/helloworld \
-  `realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/../../../../lib64/Scrt1.o` \
-  `realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu` \
-  `realpath /10.2.0/../../../../lib64/crti.o` \
-  `realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/crtbeginS.o` \
+  "$(realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/../../../../lib64/Scrt1.o)" \
+  "$(realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu)" \
+  "$(realpath /10.2.0/../../../../lib64/crti.o)" \
+  "$(realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/crtbeginS.o)" \
   -L/sbin/../lib64/gc \
   c/x86_64-pc-linux-gnu/10.2.0 \
-  -L `/sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/../../../../lib64` \
+  -L "$(/sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/../../../../lib64)" \
   -L/usr/bin/../l \
   ib64 \
-  -L `realpath /lib/../lib64` \
-  -L `realpath /usr/lib/../lib64` \
-  -L `realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/../../..` \
-  -L `realpath /usr/bin/.` \
+  -L "$(realpath /lib/../lib64)" \
+  -L "$(realpath /usr/lib/../lib64)" \
+  -L "$(realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/../../..)" \
+  -L "$(realpath /usr/bin/.)" \
   ./lib \
   -L/lib \
   -L/usr/lib \
@@ -53,9 +52,9 @@ clang tests/helloworld.sood.s -o tests/helloworld # this works
   d \
   -lgcc_s \
   --no-as-needed \
-  `realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/crtendS.o` \
-  `realpath /sbin/../lib64/gcc/x86_64-pc-` \
-  `realpath linux-gnu/10.2.0/../../../../lib64/crtn.o`
+  "$(realpath /sbin/../lib64/gcc/x86_64-pc-linux-gnu/10.2.0/crtendS.o)" \
+  "$(realpath /sbin/../lib64/gcc/x86_64-pc-)" \
+  "$(realpath linux-gnu/10.2.0/../../../../lib64/crtn.o)"
 
 
 # THIS WORKS!!!
@@ -69,3 +68,11 @@ ld --verbose -L/usr/lib -lc \
   tests/helloworld.sood.o \
   -o tests/helloworld \
   /usr/lib/crtn.o
+
+# Memory leaks
+valgrind --leak-check=full \
+   --show-leak-kinds=all \
+   --track-origins=yes \
+   --verbose \
+   --log-file=valgrind-out.log \
+   -s ./src/sood -o tests/helloworld{,.sood}

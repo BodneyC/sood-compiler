@@ -10,6 +10,8 @@ static llvm::Type *type_of(const NIdentifier &type) {
     return llvm::Type::getDoubleTy(LLVM_CTX);
   if (type.val == "string")
     return llvm::Type::getInt8PtrTy(LLVM_CTX);
+  if (type.val == "void")
+    return llvm::Type::getVoidTy(LLVM_CTX);
   throw CodeGenException("Unknown variable type");
 }
 
@@ -471,6 +473,9 @@ llvm::Value *NFunctionDeclaration::code_generate(CodeGenContext &ctx) {
   }
 
   block.code_generate(ctx);
+
+  if (type.val == "void")
+    BUILDER.CreateRet(nullptr);
 
   /** After generating the code, pop the CodeGenBlock */
   ctx.pop_block();

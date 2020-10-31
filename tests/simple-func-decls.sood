@@ -1,19 +1,25 @@
 # vim: ft=sood
 
+add_two is a function with arguments of: an integer n; and of statements,
+  write n plus 2 to stdout...
+
+add_two called with 5 as an argument.
+write '\n' to stdout.
+
 # Function declaration - no args
 # c is a function of type integer and of statements,
 #   pete is an integer of value 1.
 #   return pete...
 
-g is an integer of value 666 .
+# g is an integer of value 666 .
 
-# c called..
+# c called with no arguments.
 
 # Function declaration - args
-d is a function of type integer with arguments of: an integer e; and of statements,
-  pete is an integer of value 1.
-  pete is pete plus 6.
-  return e...
+# d is a function of type integer with arguments of: an integer e; and of statements,
+#   pete is an integer of value 1.
+#   pete is pete plus 6.
+#   return e...
 
 # # Function declaration - split line
 # c is a function of type integer with arguments of:

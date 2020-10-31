@@ -25,7 +25,7 @@ NBlock *prg;
   std::vector<NVariableDeclaration *> *v_n_var_decl;
 }
 
-%token <string> /* types      */ TIDENT TFLOAT TINTEGER TSTRING
+%token <string> /* types      */ TIDENT TFLOAT TINTEGER TSTRING TVOID
 %token <string> /* grammar    */ TCOMMA TPERIOD TAND TCALLED TSEMIC TOFSTMTS
 %token <string> /*            */ TFUNCTION TIS TOFDEFAULT TOFTYPE TOFVALUE
 %token <string> /*            */ TRETURN TWITHARGS TWITH TAN TPARO TPARC
@@ -157,7 +157,18 @@ func_decl_args : func_decl_arg { $$ = new NVariableList(); $$->push_back($1); }
                | func_decl_args TCOMMA TAND func_decl_arg { $1->push_back($4); }
                ;
 
-func_decl : identifier TIS TAN TFUNCTION TOFTYPE identifier TAND TOFSTMTS block
+func_decl : identifier TIS TAN TFUNCTION TOFSTMTS block
+            {
+              NIdentifier *ident = new NIdentifier("void");
+              $$ = new NFunctionDeclaration(*ident, *$1, *$6);
+            }
+          | identifier TIS TAN TFUNCTION TWITHARGS func_decl_args TSEMIC
+              TAND TOFSTMTS block
+            {
+              NIdentifier *ident = new NIdentifier("void");
+              $$ = new NFunctionDeclaration(*ident, *$1, *$6, *$10);
+            }
+          | identifier TIS TAN TFUNCTION TOFTYPE identifier TAND TOFSTMTS block
             { $$ = new NFunctionDeclaration(*$6, *$1, *$9); }
           | identifier TIS TAN TFUNCTION TOFTYPE identifier TWITHARGS
               func_decl_args TSEMIC TAND TOFSTMTS block

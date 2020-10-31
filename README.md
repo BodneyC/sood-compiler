@@ -110,6 +110,8 @@ The first task was to use the lexer and parser to generate an AST, this is a dat
 
 As an example, the Sood code:
 
+__Note__: Void functions do exist, but I made this an `integer` and return `0` just for slightly more to read in the outputs
+
 ```sood
 # tests/helloworld-fn.sood
 
@@ -423,6 +425,13 @@ add_two is a function of type integer with arguments of:
 
 which some may prefer.
 
+If a function shouldn't return a value, i.e. a `void` function, simply omit the `of type` phrase, for example:
+
+```sood
+add_two is a function with arguments of: an integer n; and of statements,
+  write n plus 2 to stdout...
+```
+
 ### Function Calls
 
 Function calls were a tricky one to implement because by themselves they are expressions (as opposed to statements), the common statement form of these are in assignments, i.e. `b = func()` meaning assign the outcome of `func` to the variable `b`.
@@ -438,18 +447,18 @@ my_function called with no arguments.
 
 ```sood
 # Function call with one argument (one expression)
-my_function called with my_variable plus 2.
+my_function called with my_variable plus 2 as an argument.
 ```
 
 ```sood
 # Function call with multiple arguments (multiple expressions)
-my_function called with my_variable plus 2, my_other_variable, and 6 plus 2.
+my_function called with my_variable plus 2, my_other_variable, and 6 as arguments.
 
 # or
 my_function called with
     my_variable plus 2,
-    my_other_variable, and
-    6 plus 2.
+    my_other_variable,
+    and 6 as arguments.
 ```
 
 The `and` is not a requirement but does make more sense in my opinion.
