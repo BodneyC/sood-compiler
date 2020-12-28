@@ -49,7 +49,7 @@ The project has a few dependencies
 
 - [Bison](https://www.gnu.org/software/bison/) version: 3.7.2
 - [Flex](https://github.com/westes/flex/) version: 2.6.4
-- [LLVM](https://llvm.org/) version: 10.0.1
+- [LLVM](https://llvm.org/) version: 11.0.0
 - [Spdlog](https://github.com/gabime/spdlog) version: 1.8.1
 
 Should be simple enough, but I know it never goes down like...
@@ -79,7 +79,7 @@ Usage:
   -o, --output arg          Output file name (default: a.sood.out)
 ```
 
-In which, input file may either be specified as the value of the `-i` options, or, as the single positional parameter. If no input parameter is given, the compiler uses stdin.
+In which, the input file may either be specified as the value of the `-i` options, or, as the single positional parameter. If no input parameter is given, the compiler uses stdin.
 
 And output (`-o`) is applied to whichever `stop-after-xxx` option is passed. Alternatively, this is the name of the resulting executable binary file.
 
@@ -115,7 +115,7 @@ __Note__: Void functions do exist, but I made this an `integer` and return `0` j
 ```sood
 # tests/helloworld-fn.sood
 
-my_function is a function of type integer and of statements,
+my_function is a function of type integer and of statements:
   write 'Hello world\n' to stdout.
   return 0...
 
@@ -137,7 +137,7 @@ block: {
     }
   }
 
-func_call {
+  func_call {
     id: ident(my_function)
   }
 }
@@ -200,7 +200,7 @@ sood -O -o tests/helloworld-fn.o tests/helloworld-fn.sood
 
 ### Executable
 
-Finally is the native executable, this is the default function of the program and so the command to produce the executable for `helloworld-fn` is:
+Finally, is the native executable, this is the default function of the program and so the command to produce the executable for `helloworld-fn` is:
 
 ```sh
 sood -o tests/helloworld-fn tests/helloworld-fn.sood
@@ -222,7 +222,7 @@ sood -o tests/helloworld-fn tests/helloworld-fn.sood
 
 ### Comments
 
-Like BaSH, Python, Perl, etc. the hash character is used to denote a comment until the end of the line; though this does not quite fit the "English sentences meaning what the sentence means" motif, it was never the intention of the language for a source file to appear like an essay.
+Like BaSH, Python, Perl, etc. the hash character (pound sign) is used to denote a comment until the end of the line; though this does not quite fit the "English sentences meaning what the sentence means" motif, it was never the intention of the language for a source file to appear like an essay.
 
 Although, I do kind of like that idea...
 
@@ -242,14 +242,14 @@ For example:
 
 Variable naming is very C-like, underscores, and numerals are permitted, but a numeral is only permitted assuming the first charcater is an alpha or underscore character. E.g.
 
-| Variable name | Acceptable?                                                     |
-| :-            | :-                                                              |
-| `my_variable` | Yes                                                             |
-| `MyVariable`  | Yes                                                             |
-| `_my_var`     | Yes                                                             |
-| `_1`          | Yes                                                             |
-| `123_var`     | No, starts with a numeral                                       |
-| `my#var`      | No, hashes (and other grammatical characters) are not permitted |
+| Variable name | Acceptable?                                                   |
+| :-            | :-                                                            |
+| `my_variable` | Yes                                                           |
+| `MyVariable`  | Yes                                                           |
+| `_my_var`     | Yes                                                           |
+| `_1`          | Yes                                                           |
+| `123_var`     | No, starts with a numeral                                     |
+| `my#var`      | No, hashes and other grammatical characters are not permitted |
 
 #### Booleans
 
@@ -265,7 +265,7 @@ Currently, only three types are supported, these are:
 
 - `integer`: A 64-bit signed integer
 - `float`: A 64-bit floating-point number
-- `string`: An array of characters, youre standard string
+- `string`: An array of characters, your standard string
 
 No aliases for these exist, they are what they are.
 
@@ -279,7 +279,7 @@ Much like integers, floats (`float`) are in the common notation "characteristic.
 
 #### Strings
 
-Strings (`string`) can either be single quoted or double quoted, and are inherently multiline, so the string:
+Strings (`string`) can either be single quoted or double-quoted, and are inherently multiline, so the string:
 
 ```sood
 '
@@ -403,12 +403,12 @@ These take a very similar form to variable declaration with the exception of ini
 
 Argument lists begin with the phrase `with arguments of:` followed by arguments of the form `a <type> <identifer>`, e.g. `a string my_string`. This list ends with a semi-colon `;`.
 
-The start of the block is denoted `and of statements,`. The block is then closed with two full-stops.
+The start of the block is denoted `and of statements:`. The block is then closed with two full-stops.
 
 For example:
 
 ```sood
-add_two is a function of type integer with arguments of: an integer n; and of statements,
+add_two is a function of type integer with arguments of: an integer n; and of statements:
   n is n plus 2.
   return n...
 ```
@@ -417,7 +417,7 @@ or, syntactically equivalent but perhaps more indentedly readable:
 
 ```sood
 add_two is a function of type integer with arguments of:
-    an integer n; and of statements,
+    an integer n; and of statements:
   n is n plus 2.
   return n.
 ..
@@ -428,7 +428,7 @@ which some may prefer.
 If a function shouldn't return a value, i.e. a `void` function, simply omit the `of type` phrase, for example:
 
 ```sood
-add_two is a function with arguments of: an integer n; and of statements,
+add_two is a function with arguments of: an integer n; and of statements:
   write n plus 2 to stdout...
 ```
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13.4)
-project(sood)
+project(sood VERSION 1.0.1)
 
 # set(CMAKE_VERBOSE_MAKEFILE on)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

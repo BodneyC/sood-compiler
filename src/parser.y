@@ -26,22 +26,24 @@ NBlock *prg;
 }
 
 %token <string> /* types      */ TIDENT TFLOAT TINTEGER TSTRING TVOID
-%token <string> /* grammar    */ TCOMMA TPERIOD TAND TCALLED TSEMIC TOFSTMTS
+%token <string> /* grammar    */ TCOMMA TPERIOD TAND TCALLED TSEMIC TCOLON
 %token <string> /*            */ TFUNCTION TIS TOFDEFAULT TOFTYPE TOFVALUE
 %token <string> /*            */ TRETURN TWITHARGS TWITH TAN TPARO TPARC
+%token <string> /*            */ TOFSTMT TOFSTMTS
 %token <string> /* constructs */ TIF TELSE TWHILE TUNTIL TNOARGS TASARGS
 %token <string> /*            */ TREAD TWRITE TTO TFROM
 %token <val>    /* operators  */ TPLS TMNS TMUL TDIV TMOD
 %token <val>    /* boolean    */ TEQ TNE TLT TLE TMT TME TNOT TNEG TALS TALT
 
-%type <n_expr>    numeric string expr arithmetic
-%type <n_expr>    binary_comparison unary_comparison func_call
+%type <n_expr>          numeric string expr arithmetic
+%type <n_expr>          binary_comparison unary_comparison func_call
 %type <n_identifier>    identifier
-%type <n_block>         program stmts block
-%type <n_statement>     stmt var_decl func_decl if_stmt while_stmt until_stmt io_stmt
-%type <n_variable_decl> func_decl_arg 
+%type <n_block>         program stmts block single_block
+%type <n_statement>     stmt var_decl func_decl func_decl_single
+%type <n_statement>     if_stmt while_stmt until_stmt io_stmt
+%type <n_variable_decl> func_decl_arg
 %type <v_n_var_decl>    func_decl_args
-%type <v_n_expr>  func_call_args
+%type <v_n_expr>        func_call_args
 
 %precedence TIF
 %precedence TPARO
@@ -71,6 +73,7 @@ io_stmt : TREAD TFROM expr TTO expr TPERIOD { $$ = new NRead(*$3, *$5); }
 
 stmt : var_decl
      | func_decl
+     | func_decl_single
      | if_stmt
      | while_stmt
      | until_stmt
@@ -136,15 +139,18 @@ unary_comparison : TNOT expr { $$ = new NUnaryExpression($1, *$2); }
                  | TNEG expr { $$ = new NUnaryExpression($1, *$2); }
                  ;
 
-block : TCOMMA stmts TPERIOD TPERIOD { $$ = $2; } /* stmts creates a new block */
-      | TCOMMA TPERIOD TPERIOD       { $$ = new NBlock(); }
-      ;
-
 var_decl : identifier TIS TAN identifier TOFVALUE expr TPERIOD
            { $$ = new NVariableDeclaration(*$4, *$1, $6); }
          | identifier TIS TAN identifier TPERIOD 
            { $$ = new NVariableDeclaration(*$4, *$1); }
          ;
+
+single_block : stmt TPERIOD TPERIOD { $$ = new NBlock(); $$->stmts.push_back($1); }
+             ;
+
+block : stmts TPERIOD TPERIOD { $$ = $1; } /* stmts creates a new block */
+      | TPERIOD TPERIOD       { $$ = new NBlock(); }
+      ;
 
 func_decl_arg : TAN identifier identifier
                 { $$ = new NVariableDeclaration(*$2, *$3); }
@@ -157,33 +163,51 @@ func_decl_args : func_decl_arg { $$ = new NVariableList(); $$->push_back($1); }
                | func_decl_args TCOMMA TAND func_decl_arg { $1->push_back($4); }
                ;
 
-func_decl : identifier TIS TAN TFUNCTION TOFSTMTS block
+func_decl_single : identifier TIS TAN TFUNCTION TOFSTMT TCOLON single_block
+                   {
+                     NIdentifier *type = new NIdentifier("void");
+                     $$ = new NFunctionDeclaration(*type, *$1, *$7);
+                   }
+                 | identifier TIS TAN TFUNCTION TWITHARGS TCOLON func_decl_args TSEMIC
+                     TAND TOFSTMT TCOLON single_block
+                   {
+                     NIdentifier *type = new NIdentifier("void");
+                     $$ = new NFunctionDeclaration(*type, *$1, *$7, *$12);
+                   }
+                 | identifier TIS TAN TFUNCTION TOFTYPE identifier TAND TOFSTMT TCOLON single_block
+                   { $$ = new NFunctionDeclaration(*$6, *$1, *$10); }
+                 | identifier TIS TAN TFUNCTION TOFTYPE identifier TWITHARGS TCOLON
+                     func_decl_args TSEMIC TAND TOFSTMT TCOLON single_block
+                   { $$ = new NFunctionDeclaration(*$6, *$1, *$9, *$14); }
+                 ;
+
+func_decl : identifier TIS TAN TFUNCTION TOFSTMTS TCOLON block
             {
-              NIdentifier *ident = new NIdentifier("void");
-              $$ = new NFunctionDeclaration(*ident, *$1, *$6);
+              NIdentifier *type = new NIdentifier("void");
+              $$ = new NFunctionDeclaration(*type, *$1, *$7);
             }
-          | identifier TIS TAN TFUNCTION TWITHARGS func_decl_args TSEMIC
-              TAND TOFSTMTS block
+          | identifier TIS TAN TFUNCTION TWITHARGS TCOLON func_decl_args TSEMIC
+              TAND TOFSTMTS TCOLON block
             {
-              NIdentifier *ident = new NIdentifier("void");
-              $$ = new NFunctionDeclaration(*ident, *$1, *$6, *$10);
+              NIdentifier *type = new NIdentifier("void");
+              $$ = new NFunctionDeclaration(*type, *$1, *$7, *$12);
             }
-          | identifier TIS TAN TFUNCTION TOFTYPE identifier TAND TOFSTMTS block
-            { $$ = new NFunctionDeclaration(*$6, *$1, *$9); }
-          | identifier TIS TAN TFUNCTION TOFTYPE identifier TWITHARGS
-              func_decl_args TSEMIC TAND TOFSTMTS block
-            { $$ = new NFunctionDeclaration(*$6, *$1, *$8, *$12); }
+          | identifier TIS TAN TFUNCTION TOFTYPE identifier TAND TOFSTMTS TCOLON block
+            { $$ = new NFunctionDeclaration(*$6, *$1, *$10); }
+          | identifier TIS TAN TFUNCTION TOFTYPE identifier TWITHARGS TCOLON
+              func_decl_args TSEMIC TAND TOFSTMTS TCOLON block
+            { $$ = new NFunctionDeclaration(*$6, *$1, *$9, *$14); }
           ;
 
-if_stmt : TIF expr block { $$ = new NIfStatement(*$2, *$3); }
-        | if_stmt TELSE block { $<n_if_stmt>1->els = new NElseStatement(*$3); }
+if_stmt : TIF expr TCOMMA block { $$ = new NIfStatement(*$2, *$4); }
+        | if_stmt TELSE TCOMMA block { $<n_if_stmt>1->els = new NElseStatement(*$4); }
         | if_stmt TELSE if_stmt { $<n_if_stmt>1->els = $3; }
         ;
 
-while_stmt : TWHILE expr block { $$ = new NWhileStatement(*$2, *$3); }
+while_stmt : TWHILE expr TCOMMA block { $$ = new NWhileStatement(*$2, *$4); }
            ;
 
-until_stmt : TUNTIL expr block { $$ = new NUntilStatement(*$2, *$3); }
+until_stmt : TUNTIL expr TCOMMA block { $$ = new NUntilStatement(*$2, *$4); }
            ;
 
 %%

@@ -41,6 +41,7 @@ void yyerror(const char *s) {
 ","                        return TCOMMA;
 "."                        return TPERIOD;
 ";"                        return TSEMIC;
+":"                        return TCOLON;
 "and"                      return TAND;
 "called"                   return TCALLED;
 "function"                 return TFUNCTION;
@@ -49,11 +50,12 @@ void yyerror(const char *s) {
 "of type"                  return TOFTYPE;
 "of value"                 return TOFVALUE;
 "of statements"            return TOFSTMTS;
+"of the statement"         return TOFSTMT;
 "no arguments"             return TNOARGS;
 "as an argument"           return TASARGS;
 "as arguments"             return TASARGS;
 "return"                   return TRETURN;
-"with arguments of:"       return TWITHARGS;
+"with arguments of"        return TWITHARGS;
 "with"                     return TWITH;
 an?                        return TAN;
 "("                        return TPARO;
