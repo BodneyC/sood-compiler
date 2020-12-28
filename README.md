@@ -380,7 +380,7 @@ Examples evaluate to `true`.
 | Greater          | `>`      | `is more than`             | `1 is more than 0`             |
 | Greater or equal | `>=`     | `is more than or equal to` | `1 is more than or equal to 0` |
 | And              | `&&`     | `also`                     | `true also true`               |
-| Or               | `||`     | `alternatively`            | `false alternatively true`     |
+| Or               | `\|\|`     | `alternatively`            | `false alternatively true`     |
 
 I had used the word `and` too much already, hence the need for `also` in place of the convention. The `alternatively` in place of "or" is just because it made me laugh.
 
