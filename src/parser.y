@@ -6,7 +6,7 @@ extern void yyerror(const char *);
 NBlock *prg;
 %}
 
-%locations 
+%locations
 
 %union {
   Node                 *node;
@@ -26,14 +26,14 @@ NBlock *prg;
 }
 
 %token <string> /* types      */ TIDENT TFLOAT TINTEGER TSTRING TVOID
-%token <string> /* grammar    */ TCOMMA TPERIOD TAND TCALLED TSEMIC TCOLON
+%token <string> /* grammar    */ TCOMMA TPERIOD TCALLED TSEMIC TCOLON
 %token <string> /*            */ TFUNCTION TIS TOFDEFAULT TOFTYPE TOFVALUE
 %token <string> /*            */ TRETURN TWITHARGS TWITH TAN TPARO TPARC
 %token <string> /*            */ TOFSTMT TOFSTMTS
 %token <string> /* constructs */ TIF TELSE TWHILE TUNTIL TNOARGS TASARGS
 %token <string> /*            */ TREAD TWRITE TTO TFROM
 %token <val>    /* operators  */ TPLS TMNS TMUL TDIV TMOD
-%token <val>    /* boolean    */ TEQ TNE TLT TLE TMT TME TNOT TNEG TALS TALT
+%token <val>    /* boolean    */ TEQ TNE TLT TLE TMT TME TNOT TNEG TAND TALT
 
 %type <n_expr>          numeric string expr arithmetic
 %type <n_expr>          binary_comparison unary_comparison func_call
@@ -48,10 +48,10 @@ NBlock *prg;
 %precedence TIF
 %precedence TPARO
 
-%left  TEQ TNE TLT TLE TMT TME TALS TALT
-%left  TMOD
-%left  TMUL TDIV
-%left  TPLS TMNS
+%left TEQ TNE TLT TLE TMT TME TAND TALT
+%left TMOD
+%left TMUL TDIV
+%left TPLS TMNS
 
 %right TELSE
 %right TNOT TNEG
@@ -131,7 +131,7 @@ binary_comparison : expr TEQ expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TLT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TLE expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TMT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
-                  | expr TALS expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
+                  | expr TAND expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TALT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   ;
 
@@ -141,7 +141,7 @@ unary_comparison : TNOT expr { $$ = new NUnaryExpression($1, *$2); }
 
 var_decl : identifier TIS TAN identifier TOFVALUE expr TPERIOD
            { $$ = new NVariableDeclaration(*$4, *$1, $6); }
-         | identifier TIS TAN identifier TPERIOD 
+         | identifier TIS TAN identifier TPERIOD
            { $$ = new NVariableDeclaration(*$4, *$1); }
          ;
 

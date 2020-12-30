@@ -175,7 +175,7 @@ llvm::Value *NBinaryExpression::code_generate(CodeGenContext &ctx) {
     return BUILDER.CreateSDiv(_lhs, _rhs, "div");
   case OP_MODULO: // ?
     return BUILDER.CreateSRem(_lhs, _rhs, "srem_mod");
-  case OP_ALSO:
+  case OP_AND:
     return BUILDER.CreateAnd(_lhs, _rhs, "also");
   case OP_ALTERNATIVELY:
     return BUILDER.CreateOr(_lhs, _rhs, "alternatively");
@@ -245,7 +245,7 @@ llvm::Value *NBlock::code_generate(CodeGenContext &ctx) {
  * Desc: Casts the RHS value to the type of LHS for use in an assignment
  * Args:
  *   - _rhs: The LLVM value of the RHS expression
- *   - _lhs_typle: The value/type tuple from the locals of the `CodeGenBlock`
+ *   - _lhs_type: The value/type tuple from the locals of the `CodeGenBlock`
  * Notes:
  *   - Currently, this function does nothing with string and attempts to
  *     assign an integer to a string or vice versa will fail, this is a future

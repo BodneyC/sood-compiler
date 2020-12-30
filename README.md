@@ -379,10 +379,10 @@ Examples evaluate to `true`.
 | Less or equal    | `<=`     | `is less than or equal to` | `1 is less than or equal to 2` |
 | Greater          | `>`      | `is more than`             | `1 is more than 0`             |
 | Greater or equal | `>=`     | `is more than or equal to` | `1 is more than or equal to 0` |
-| And              | `&&`     | `also`                     | `true also true`               |
+| And              | `&&`     | `and`                     | `true and true`               |
 | Or               | `\|\|`     | `alternatively`            | `false alternatively true`     |
 
-I had used the word `and` too much already, hence the need for `also` in place of the convention. The `alternatively` in place of "or" is just because it made me laugh.
+The use of `alternatively` in place of "or" is just because it made me laugh.
 
 __Note__: I know "greater" is often preferred to "more" however that is not a preference I share.
 

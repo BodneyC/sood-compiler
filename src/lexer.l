@@ -18,8 +18,8 @@ void yyerror(const char *s) {
 
 %%
 
-[ \t\n\r]                  ;
-#.*                        ;
+[ \t\n\r] ;
+#.*       ;
 
 "is equal to"              TOKEN(OP_EQUAL_TO);           return TEQ;
 "is not equal to"          TOKEN(OP_NOT_EQUAL_TO);       return TNE;
@@ -29,7 +29,7 @@ void yyerror(const char *s) {
 "is more than or equal to" TOKEN(OP_MORE_THAN_EQUAL_TO); return TME;
 "not"                      TOKEN(OP_NOT);                return TNOT;
 "negative"                 TOKEN(OP_NEGATIVE);           return TNEG;
-"also"                     TOKEN(OP_ALSO);               return TALS;
+"and"                      TOKEN(OP_AND);                return TAND;
 "alternatively"            TOKEN(OP_ALTERNATIVELY);      return TALT;
 
 "plus"                     TOKEN(OP_PLUS);               return TPLS;
@@ -42,7 +42,6 @@ void yyerror(const char *s) {
 "."                        return TPERIOD;
 ";"                        return TSEMIC;
 ":"                        return TCOLON;
-"and"                      return TAND;
 "called"                   return TCALLED;
 "function"                 return TFUNCTION;
 "is"                       return TIS;

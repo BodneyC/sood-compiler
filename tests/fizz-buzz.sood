@@ -9,7 +9,7 @@ number_of_repetitions is an integer of value 15.
 
 fizz_buzz is a function of type string with arguments of:
       an integer num; and of statements:
-  if (num modulo 3 is equal to 0) also (num modulo 5 is equal to 0),
+  if (num modulo 3 is equal to 0) and (num modulo 5 is equal to 0),
     return 'FizzBuzz'...
   if num modulo 3 is equal to 0,
     return 'Fizz'...
