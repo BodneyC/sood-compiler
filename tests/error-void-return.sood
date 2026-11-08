@@ -2,4 +2,4 @@
 #! Cannot return a value from a void function
 
 f is a function of statements:
-  return 1...
+  return 1.

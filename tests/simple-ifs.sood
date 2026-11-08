@@ -6,14 +6,14 @@ my_var is an integer of value 00000.
 if my_var is equal to 11111,
   # nested if
   if my_var is equal to 22222,
-    my_var is my_var plus 33333...
+    my_var is my_var plus 33333.
   else,
-    my_var is my_var plus 77777...
-  my_other_var is an integer of value 44444.
-  my_var is my_var plus 55555...
+    my_var is my_var plus 77777.
+  my_other_var is an integer of value 44444;
+  my_var is my_var plus 55555.
 # else if
 else if my_var is equal to 50,
-  my_var is my_var multiplied by 2...
+  my_var is my_var multiplied by 2.
 # else
 else,
-  my_var is 0...
+  my_var is 0.

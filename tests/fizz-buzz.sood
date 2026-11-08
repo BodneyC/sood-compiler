@@ -10,12 +10,12 @@ number_of_repetitions is an integer of value 15.
 fizz_buzz is a function of type string with arguments of:
       an integer num; and of statements:
   if (num modulo 3 is equal to 0) and (num modulo 5 is equal to 0),
-    return 'FizzBuzz'...
+    return 'FizzBuzz'.
   if num modulo 3 is equal to 0,
-    return 'Fizz'...
+    return 'Fizz'.
   if num modulo 5 is equal to 0,
-    return 'Buzz'...
-  return ''...
+    return 'Buzz'.
+  return ''.
 
 # write 'muffins' to stdout.
 
@@ -23,13 +23,13 @@ output is a string of value ''.
 counter is an integer of value 1.
 
 until counter is more than number_of_repetitions,
-  output is fizz_buzz called with counter as an argument.
+  output is fizz_buzz called with counter as an argument;
   if output is equal to '',
-    write counter to stdout...
+    write counter to stdout.
   else,
-    write output to stdout...
-  write '\n' to stdout.
-  counter is counter plus 1...
+    write output to stdout.
+  write '\n' to stdout;
+  counter is counter plus 1.
 
 #> 1
 #> 2

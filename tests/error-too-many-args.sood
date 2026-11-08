@@ -2,5 +2,5 @@
 #! Too many arguments
 
 f is a function with arguments of: an integer n; and of statements:
-  write n to stdout...
+  write n to stdout.
 f called with 1, and 2 as arguments.

@@ -49,8 +49,8 @@ write b to stdout. write '\n' to stdout.
 
 # Short-circuiting, `noisy` is never called
 noisy is a function of type integer and of statements:
-  write 'noisy\n' to stdout.
-  return 1...
+  write 'noisy\n' to stdout;
+  return 1.
 write false and noisy called with no arguments to stdout. write '\n' to stdout.
 #> false
 write true alternatively noisy called with no arguments to stdout.

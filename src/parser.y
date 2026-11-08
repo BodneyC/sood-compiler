@@ -78,8 +78,9 @@ NBlock *prg;
 %type <n_expr>          numeric string boolean expr arithmetic
 %type <n_expr>          binary_comparison unary_comparison func_call
 %type <n_identifier>    identifier
-%type <n_block>         program stmts block single_block
-%type <n_statement>     stmt var_decl func_decl func_decl_single
+%type <n_block>         program stmts block block_stmts single_block
+%type <n_statement>     stmt simple_stmt compound_stmt
+%type <n_statement>     var_decl func_decl func_decl_single
 %type <n_statement>     if_stmt while_stmt until_stmt io_stmt
 %type <n_variable_decl> func_decl_arg
 %type <v_n_var_decl>    func_decl_args
@@ -111,21 +112,29 @@ stmts : stmt       { $$ = new NBlock(); $$->stmts.push_back($1); }
       | stmts stmt { $1->stmts.push_back($2); }
       ;
 
-io_stmt : TREAD TFROM expr TTO expr TPERIOD { $$ = new NRead(*$3, *$5); }
-        | TWRITE expr TTO expr TPERIOD { $$ = new NWrite(*$2, *$4); }
+io_stmt : TREAD TFROM expr TTO expr { $$ = new NRead(*$3, *$5); }
+        | TWRITE expr TTO expr { $$ = new NWrite(*$2, *$4); }
         ;
 
-stmt : var_decl
-     | func_decl
-     | func_decl_single
-     | if_stmt
-     | while_stmt
-     | until_stmt
-     | io_stmt
-     | expr TPERIOD { $$ = new NExpressionStatement(*$1); }
-     | identifier TIS expr TPERIOD  { $$ = new NAssignment(*$1, *$3); }
-     | TRETURN expr TPERIOD { $$ = new NReturnStatement(*$2); }
+/* At the top level, simple statements end with a period, statements taking a
+ * block end with the period that ends their block */
+stmt : simple_stmt TPERIOD
+     | compound_stmt
      ;
+
+simple_stmt : var_decl
+            | io_stmt
+            | expr { $$ = new NExpressionStatement(*$1); }
+            | identifier TIS expr { $$ = new NAssignment(*$1, *$3); }
+            | TRETURN expr { $$ = new NReturnStatement(*$2); }
+            ;
+
+compound_stmt : func_decl
+              | func_decl_single
+              | if_stmt
+              | while_stmt
+              | until_stmt
+              ;
 
 func_call_args : TWITH expr
                  { $$ = new NExpressionList(); $$->push_back($2); }
@@ -188,17 +197,28 @@ unary_comparison : TNOT expr { $$ = new NUnaryExpression($1, *$2); }
                  | TNEG expr { $$ = new NUnaryExpression($1, *$2); }
                  ;
 
-var_decl : identifier TIS TAN identifier TOFVALUE expr TPERIOD
+var_decl : identifier TIS TAN identifier TOFVALUE expr
            { $$ = new NVariableDeclaration(*$4, *$1, $6); }
-         | identifier TIS TAN identifier TPERIOD
+         | identifier TIS TAN identifier
            { $$ = new NVariableDeclaration(*$4, *$1); }
          ;
 
-single_block : stmt TPERIOD TPERIOD { $$ = new NBlock(); $$->stmts.push_back($1); }
+single_block : simple_stmt TPERIOD   { $$ = new NBlock(); $$->stmts.push_back($1); }
+             | compound_stmt TPERIOD { $$ = new NBlock(); $$->stmts.push_back($1); }
              ;
 
-block : stmts TPERIOD TPERIOD { $$ = $1; } /* stmts creates a new block */
-      | TPERIOD TPERIOD       { $$ = new NBlock(); }
+/* Within a block, simple statements are separated by semicolons and the last
+ * ends the block with a period. Statements taking a block are already ended by
+ * their own period, so need no separator, but one ending the outer block needs
+ * a second period */
+block_stmts : %empty                         { $$ = new NBlock(); }
+            | block_stmts simple_stmt TSEMIC { $1->stmts.push_back($2); }
+            | block_stmts compound_stmt      { $1->stmts.push_back($2); }
+            ;
+
+block : block_stmts simple_stmt TPERIOD   { $1->stmts.push_back($2); $$ = $1; }
+      | block_stmts compound_stmt TPERIOD { $1->stmts.push_back($2); $$ = $1; }
+      | TPERIOD                           { $$ = new NBlock(); }
       ;
 
 func_decl_arg : TAN identifier identifier

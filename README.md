@@ -133,8 +133,8 @@ __Note__: Void functions do exist, but I made this an `integer` and return `0` j
 # tests/helloworld-fn.sood
 
 my_function is a function of type integer and of statements:
-  write 'Hello world\n' to stdout.
-  return 0...
+  write 'Hello world\n' to stdout;
+  return 0.
 
 my_function called with no arguments.
 ```
@@ -322,7 +322,21 @@ this is a\nstring
 
 Statements in Sood follow a sentence-like pattern, i.e. they are a series of phrases, occasionally separated by commas, ending with a full-stop (period).
 
-Statement which take of a block of other statments, for example function declarations, begin with an incomplete sentence followed by a comma, are proceeded by the list of statements, and end with a double full-stop. So, the last statement's ending period and the two that form the end of the block, together form an ellipse.
+Statements which take a block of other statements, for example function declarations, begin with an incomplete sentence followed by a comma (or colon) and are followed by the list of statements. Within a block, statements are separated by semi-colons and the last one ends the block with a full-stop, much like a list in an English sentence.
+
+A statement which itself takes a block (an `if`, say) is already ended by the full-stop of its own block, so needs no semi-colon after it. If such a statement is the last in the outer block, a second full-stop on its own ends the outer block:
+
+```sood
+sign is a function with arguments of: an integer n; and of statements:
+  write 'sign: ' to stdout;
+  if n is less than 0,
+    write '-' to stdout.
+  else,
+    write '+' to stdout.
+  .
+```
+
+An empty block is just a full-stop, e.g. `while true, .`
 
 Whitespace is ignored in the majority of the language (with the exception of within strings), so one may separate a statement, word by word, with spaces, tabs, and newline to whatever extent.
 
@@ -421,33 +435,27 @@ These take a very similar form to variable declaration with the exception of ini
 
 Argument lists begin with the phrase `with arguments of:` followed by arguments of the form `a <type> <identifer>`, e.g. `a string my_string`. This list ends with a semi-colon `;`.
 
-The start of the block is denoted `and of statements:`. The block is then closed with two full-stops.
+The start of the block is denoted `and of statements:`. The statements are separated with semi-colons and the block is closed by the full-stop of the last.
 
 For example:
 
 ```sood
 add_two is a function of type integer with arguments of: an integer n; and of statements:
-  n is n plus 2.
-  return n...
+  n is n plus 2;
+  return n.
 ```
 
-or, syntactically equivalent but perhaps more indentedly readable:
+or, syntactically equivalent but perhaps more readable on one line:
 
 ```sood
-add_two is a function of type integer with arguments of:
-    an integer n; and of statements:
-  n is n plus 2.
-  return n.
-..
+add_two is a function of type integer with arguments of: an integer n; and of statements: n is n plus 2; return n.
 ```
-
-which some may prefer.
 
 If a function shouldn't return a value, i.e. a `void` function, simply omit the `of type` phrase, for example:
 
 ```sood
 add_two is a function with arguments of: an integer n; and of statements:
-  write n plus 2 to stdout...
+  write n plus 2 to stdout.
 ```
 
 Arguments may be given a default value with `of default value`, these may be left out of a call (all arguments following one with a default must also have one):
@@ -456,7 +464,7 @@ Arguments may be given a default value with `of default value`, these may be lef
 greet is a function with arguments of:
     a string name, and a string greeting of default value 'Hello';
     and of statements:
-  write greeting to stdout...
+  write greeting to stdout.
 ```
 
 A function which reaches the end of its statements without a `return` returns zero (or `""`). Top-level functions may be called before they are declared, and variables declared at the top level of the program are visible within functions. Variables declared within a block (of a function, `if`, `while`, or `until`) are only visible within that block.
@@ -505,21 +513,21 @@ These follow the already establish block notation, for example:
 ```sood
 # Evaluate condition and perform block `if` true
 if my_variable is less than 10,
-  my_variable is my_variable plus one...
+  my_variable is my_variable plus one.
 ```
 
 ```sood
 # Evaluate condition and perform block `while` condition is true
 #  (`until` false)
 while my_variable is less than 10,
-  my_variable is my_variable plus one...
+  my_variable is my_variable plus one.
 ```
 
 ```sood
 # Evaluate condition and perform block `until` condition is true
 #  (`while` false)
 until my_variable is equal to 9,
-  my_variable is my_variable plus one...
+  my_variable is my_variable plus one.
 ```
 
 With the latter two being syntactically equivalent. I've always like the idea of an `until` statement and find it quicker to grasp than the `while` equivalent, I assume this is just a personal preference.

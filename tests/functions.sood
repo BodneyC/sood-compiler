@@ -7,17 +7,17 @@ write factorial called with 10 as an argument to stdout. write '\n' to stdout.
 factorial is a function of type integer with arguments of:
     an integer n; and of statements:
   if n is less than or equal to 1,
-    return 1...
-  return n multiplied by factorial called with n minus 1 as an argument...
+    return 1.
+  return n multiplied by factorial called with n minus 1 as an argument.
 
 # Default arguments
 greet is a function with arguments of:
     a string name, and a string greeting of default value 'Hello';
     and of statements:
-  write greeting to stdout.
-  write ', ' to stdout.
-  write name to stdout.
-  write '\n' to stdout...
+  write greeting to stdout;
+  write ', ' to stdout;
+  write name to stdout;
+  write '\n' to stdout.
 
 greet called with 'world' as an argument.
 #> Hello, world
@@ -27,7 +27,7 @@ greet called with 'moon', and 'Goodnight' as arguments.
 # Top-level variables are visible within functions
 total is an integer.
 add_to_total is a function with arguments of: an integer n; and of statements:
-  total is total plus n...
+  total is total plus n.
 add_to_total called with 5 as an argument.
 add_to_total called with 2.9 as an argument.
 write total to stdout. write '\n' to stdout.
@@ -36,21 +36,21 @@ write total to stdout. write '\n' to stdout.
 # Arguments are converted to the parameter's type, return values to the
 # function's type
 half is a function of type float with arguments of: a float n; and of statements:
-  return n divided by 2...
+  return n divided by 2.
 write half called with 3 as an argument to stdout. write '\n' to stdout.
 #> 1.5
 
 # A function without a `return` returns zero
 nothing is a function of type integer and of statements:
-  write 'nothing\n' to stdout...
+  write 'nothing\n' to stdout.
 write nothing called with no arguments to stdout. write '\n' to stdout.
 #> nothing
 #> 0
 
 # Statements after a `return` are never run
 early is a function of type string and of statements:
-  return 'early'.
-  write 'unreachable\n' to stdout...
+  return 'early';
+  write 'unreachable\n' to stdout.
 write early called with no arguments to stdout. write '\n' to stdout.
 #> early
 
