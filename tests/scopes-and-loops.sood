@@ -1,0 +1,54 @@
+# vim: ft=sood
+
+x is an integer of value 1.
+
+# Variables declared in a block are only visible within it, and may shadow
+if true,
+  x is a string of value 'inner'.
+  write x to stdout. write '\n' to stdout...
+write x to stdout. write '\n' to stdout.
+#> inner
+#> 1
+
+# Variables declared in a loop are re-initialized on each iteration
+counter is an integer.
+while counter is less than 3,
+  in_loop is an integer.
+  in_loop is in_loop plus counter.
+  write in_loop to stdout.
+  counter is counter plus 1...
+write '\n' to stdout.
+#> 012
+
+until counter is equal to 0,
+  counter is counter minus 1.
+  write counter to stdout...
+write '\n' to stdout.
+#> 210
+
+# Else-ifs
+classify is a function with arguments of: an integer n; and of statements:
+  if n is less than 0,
+    write 'negative' to stdout...
+  else if n is equal to 0,
+    write 'zero' to stdout...
+  else,
+    write 'positive' to stdout...
+  write '\n' to stdout...
+classify called with negative 5 as an argument.
+classify called with 0 as an argument.
+classify called with 5 as an argument.
+#> negative
+#> zero
+#> positive
+
+# Loop conditions with `and`
+k is an integer.
+while k is less than 10 and k modulo 7 is not equal to 6,
+  k is k plus 1...
+write k to stdout. write '\n' to stdout.
+#> 6
+
+# `return` at the top level is the exit status
+return 0.
+write 'unreachable\n' to stdout.

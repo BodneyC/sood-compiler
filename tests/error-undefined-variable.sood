@@ -1,0 +1,4 @@
+# vim: ft=sood
+#! Variable `y` is not defined
+
+x is an integer of value y plus 1.

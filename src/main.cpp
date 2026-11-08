@@ -1,4 +1,8 @@
+#include <cstdio>
 #include <fstream>
+#include <spawn.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <iostream>
 #include <spdlog/cfg/env.h>
 #include <spdlog/spdlog.h>
@@ -6,19 +10,42 @@
 #include "ast.hpp"
 #include "cli.hpp"
 #include "codegen.hpp"
-#include "subprocess.hpp"
 
 extern int yyparse();
 extern FILE *yyin;
 extern NBlock *prg;
+extern char **environ;
+
+/**
+ * Name: run_command
+ * Construct: Function
+ * Desc: Runs a command (searching the `PATH`) and waits for it, returning its
+ *   exit status, or -1 if it couldn't be started. The command's output is not
+ *   captured
+ * Args:
+ *   - argv: The command and its arguments
+ */
+static int run_command(std::vector<std::string> argv) {
+  std::vector<char *> c_argv;
+  for (auto &arg : argv)
+    c_argv.push_back(&arg[0]);
+  c_argv.push_back(nullptr);
+  pid_t pid;
+  if (posix_spawnp(&pid, c_argv[0], nullptr, nullptr, c_argv.data(), environ))
+    return -1;
+  int status;
+  if (waitpid(pid, &status, 0) == -1)
+    return -1;
+  return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+}
 
 /** Maximum length of back-trace to be displayed by SPDLog */
 const int BT_VOL = 32;
 
 int main(int argc, char **argv) {
-  spdlog::info("Starting Sood compiler...");
   spdlog::enable_backtrace(BT_VOL);
   spdlog::cfg::load_env_levels();
+  spdlog::info("Starting Sood compiler...");
 
   SoodArgs args = parse_args(argc, argv);
 
@@ -43,7 +70,8 @@ int main(int argc, char **argv) {
   }
 
   /** Parse the source code using the generated parser from Bison */
-  yyparse();
+  if (yyparse() || !prg)
+    return 1;
 
   /**
    * If an input file was specified, we are now finished with it and can
@@ -71,11 +99,27 @@ int main(int argc, char **argv) {
   }
 
   CodeGenContext ctx;
-  ctx.code_generate(*prg);
+  try {
+    ctx.code_generate(*prg);
+  } catch (CodeGenException &e) {
+    if (e.line)
+      spdlog::error("Error near line {}: {}", e.line, e.what());
+    else
+      spdlog::error("Error: {}", e.what());
+    return 1;
+  }
 
   if (!args.no_verify) {
     spdlog::info("Verifying LLVM module");
-    ctx.verify_module();
+    if (!ctx.verify_module()) {
+      spdlog::error("LLVM module verification failed");
+      return 1;
+    }
+  }
+
+  if (args.opt_level) {
+    spdlog::info("Optimizing at level {}", args.opt_level);
+    ctx.optimize(args.opt_level);
   }
 
   if (args.print_llvm_ir) {
@@ -94,10 +138,18 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  /** Run the code (the LLVM module's main function) from within the compiler */
+  /**
+   * Run the code (the LLVM module's main function) from within the compiler,
+   *   exiting with its status
+   */
   if (args.run_llvm_ir) {
     spdlog::info("Running LLVM module...");
-    ctx.code_run();
+    try {
+      return ctx.code_run();
+    } catch (CodeGenException &e) {
+      spdlog::error("{}", e.what());
+      return 1;
+    }
   }
 
   std::string obj_fname = args.output;
@@ -114,46 +166,37 @@ int main(int argc, char **argv) {
     if (pos != std::string::npos)
       obj_fname.erase(0, pos + 1);
     obj_fname = "/tmp/" + obj_fname + ".o.XXXXXX";
-    char *obj_fname_c = strdup(obj_fname.c_str());
-    int fd = mkstemp(obj_fname_c);
+    std::vector<char> obj_fname_c(obj_fname.begin(), obj_fname.end());
+    obj_fname_c.push_back('\0');
+    int fd = mkstemp(obj_fname_c.data());
     if (fd == -1) {
       spdlog::error("Could not open temporary file");
-      std::exit(1);
+      return 1;
     }
-    obj_fname = std::string(obj_fname_c);
+    close(fd);
+    obj_fname = std::string(obj_fname_c.data());
   }
 
   spdlog::debug("Writing object code to {}", obj_fname);
-  ctx.write_object(obj_fname);
+  if (ctx.write_object(obj_fname))
+    return 1;
 
-  if (args.stop_after_object)
+  if (args.stop_after_object) {
+    spdlog::info("Object code written to {}", obj_fname);
     return 0;
+  }
 
   /**
    * Sub-process to GCC (or LD) to link the object with the C runtime
-   *   libraries and, optioinally, libc
+   *   libraries and libc
    */
-  subprocess::popen gcc_cmd("gcc",
-                            {"-o", args.output.c_str(), obj_fname.c_str()});
-  /*
-   * Note: This also works but I may as well just use GCC
-   *   ld --verbose -L/usr/lib -lc \
-   *     -dynamic-linker \
-   *     /lib64/ld-linux-x86-64.so.2 \
-   *     /usr/lib/Scrt1.o \
-   *     /usr/lib/crti.o \
-   *     /usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/crtbeginS.o \
-   *     /usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/crtendS.o  \
-   *     <object file> \
-   *     -o <binary> \
-   *     /usr/lib/crtn.o
-   */
-  if (gcc_cmd.wait()) {
-    spdlog::error("GCC compilation failed:");
-    std::cerr << gcc_cmd.stderr().rdbuf() << std::endl;
-  } else {
-    spdlog::info("Native binary written to {}", args.output);
+  int status = run_command({"gcc", "-o", args.output, obj_fname});
+  std::remove(obj_fname.c_str());
+  if (status) {
+    spdlog::error("GCC compilation failed");
+    return 1;
   }
+  spdlog::info("Native binary written to {}", args.output);
 
   spdlog::info("Finishing Sood compiler");
   return 0;

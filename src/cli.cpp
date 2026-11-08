@@ -14,6 +14,8 @@ SoodArgs parse_args(int argc, char **argv) {
     ("S,stop-after-ast",     "Stop after generating the AST")
     ("C,stop-after-llvm-ir", "Stop after generating the LLVM IR")
     ("O,stop-after-object",  "Stop after writing object file")
+    ("p,opt-level",          "LLVM optimization level (0-3)",
+     cxxopts::value<unsigned>()->default_value("0"))
     ("i,input",              "Sood source file, else stdin", cxxopts::value<std::string>())
     ("o,output",             "Output file name",
      cxxopts::value<std::string>()->default_value(DEFAULT_OUT));
@@ -22,6 +24,11 @@ SoodArgs parse_args(int argc, char **argv) {
   if (res.count("help")) {
     std::cout << opts.help() << std::endl;
     exit(0);
+  }
+  unsigned opt_level = res["opt-level"].as<unsigned>();
+  if (opt_level > 3) {
+    std::cerr << "Optimization level must be between 0 and 3" << std::endl;
+    exit(1);
   }
   std::string output = res["output"].as<std::string>();
   if(res.count("input") && output == DEFAULT_OUT) {
@@ -42,6 +49,7 @@ SoodArgs parse_args(int argc, char **argv) {
     .set_stop_after_ast(res["stop-after-ast"].as<bool>())
     .set_stop_after_llvm_ir(res["stop-after-llvm-ir"].as<bool>())
     .set_stop_after_object(res["stop-after-object"].as<bool>())
+    .set_opt_level(opt_level)
     .set_input(res.count("input") ? res["input"].as<std::string>() : "")
     .set_output(output);
 }

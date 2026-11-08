@@ -7,6 +7,7 @@ NBlock *prg;
 %}
 
 %locations
+%define parse.error verbose
 
 %union {
   Node                 *node;
@@ -25,17 +26,56 @@ NBlock *prg;
   std::vector<NVariableDeclaration *> *v_n_var_decl;
 }
 
-%token <string> /* types      */ TIDENT TFLOAT TINTEGER TSTRING TVOID
-%token <string> /* grammar    */ TCOMMA TPERIOD TCALLED TSEMIC TCOLON
-%token <string> /*            */ TFUNCTION TIS TOFDEFAULT TOFTYPE TOFVALUE
-%token <string> /*            */ TRETURN TWITHARGS TWITH TAN TPARO TPARC
-%token <string> /*            */ TOFSTMT TOFSTMTS
-%token <string> /* constructs */ TIF TELSE TWHILE TUNTIL TNOARGS TASARGS
-%token <string> /*            */ TREAD TWRITE TTO TFROM
-%token <val>    /* operators  */ TPLS TMNS TMUL TDIV TMOD
-%token <val>    /* boolean    */ TEQ TNE TLT TLE TMT TME TNOT TNEG TAND TALT
+%token <string> TIDENT     "identifier"
+%token <string> TFLOAT     "float"
+%token <string> TINTEGER   "integer"
+%token <string> TSTRING    "string"
+%token <val>    TBOOLEAN   "boolean"
+%token <string> TCOMMA     ","
+%token <string> TPERIOD    "."
+%token <string> TCALLED    "called"
+%token <string> TSEMIC     ";"
+%token <string> TCOLON     ":"
+%token <string> TFUNCTION  "function"
+%token <string> TIS        "is"
+%token <string> TOFDEFAULT "of default value"
+%token <string> TOFTYPE    "of type"
+%token <string> TOFVALUE   "of value"
+%token <string> TRETURN    "return"
+%token <string> TWITHARGS  "with arguments of"
+%token <string> TWITH      "with"
+%token <string> TAN        "a/an"
+%token <string> TPARO      "("
+%token <string> TPARC      ")"
+%token <string> TOFSTMT    "of the statement"
+%token <string> TOFSTMTS   "of statements"
+%token <string> TIF        "if"
+%token <string> TELSE      "else"
+%token <string> TWHILE     "while"
+%token <string> TUNTIL     "until"
+%token <string> TNOARGS    "no arguments"
+%token <string> TASARGS    "as arguments"
+%token <string> TREAD      "read"
+%token <string> TWRITE     "write"
+%token <string> TTO        "to"
+%token <string> TFROM      "from"
+%token <val>    TPLS       "plus"
+%token <val>    TMNS       "minus"
+%token <val>    TMUL       "multiplied by"
+%token <val>    TDIV       "divided by"
+%token <val>    TMOD       "modulo"
+%token <val>    TEQ        "is equal to"
+%token <val>    TNE        "is not equal to"
+%token <val>    TLT        "is less than"
+%token <val>    TLE        "is less than or equal to"
+%token <val>    TMT        "is more than"
+%token <val>    TME        "is more than or equal to"
+%token <val>    TNOT       "not"
+%token <val>    TNEG       "negative"
+%token <val>    TAND       "and"
+%token <val>    TALT       "alternatively"
 
-%type <n_expr>          numeric string expr arithmetic
+%type <n_expr>          numeric string boolean expr arithmetic
 %type <n_expr>          binary_comparison unary_comparison func_call
 %type <n_identifier>    identifier
 %type <n_block>         program stmts block single_block
@@ -48,13 +88,17 @@ NBlock *prg;
 %precedence TIF
 %precedence TPARO
 
-%left TEQ TNE TLT TLE TMT TME TAND TALT
-%left TMOD
-%left TMUL TDIV
-%left TPLS TMNS
-
 %right TELSE
-%right TNOT TNEG
+
+/* Lowest to highest, `not` binds looser than comparisons so that
+ * `not a is equal to b` means `not (a is equal to b)` */
+%left TALT
+%left TAND
+%right TNOT
+%left TEQ TNE TLT TLE TMT TME
+%left TPLS TMNS
+%left TMUL TDIV TMOD
+%right TNEG
 
 %start program
 
@@ -97,6 +141,7 @@ func_call : identifier TCALLED TWITH TNOARGS { $$ = new NFunctionCall(*$1); }
 expr : identifier { $$ = $1; }
      | numeric
      | string
+     | boolean
      | arithmetic
      | binary_comparison
      | unary_comparison
@@ -113,6 +158,9 @@ numeric : TINTEGER { $$ = new NInteger(atol($1->c_str())); delete $1; }
 
 string : TSTRING { $$ = new NString(*$1); delete $1; }
        ;
+
+boolean : TBOOLEAN { $$ = new NBoolean($1); }
+        ;
 
 arithmetic : expr TPLS expr
              { $$ = new NBinaryExpression(*$1, $2, *$3); }
@@ -131,6 +179,7 @@ binary_comparison : expr TEQ expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TLT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TLE expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TMT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
+                  | expr TME expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TAND expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TALT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   ;

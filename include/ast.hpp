@@ -12,6 +12,13 @@ class NStatement;
 class NExpression;
 class CodeGenContext;
 
+namespace llvm {
+class Function;
+}
+
+/** Maintained by the lexer, used to give nodes an (approximate) source line */
+extern int yylineno;
+
 /**
  * Name: OPS
  * Construct: Enum
@@ -52,6 +59,7 @@ protected:
   virtual void print(std::ostream &) const = 0;
 
 public:
+  int line = yylineno;
   virtual ~Node() {}
   virtual llvm::Value *code_generate(CodeGenContext &) = 0;
   friend std::ostream &operator<<(std::ostream &out, Node const &obj) {
@@ -91,6 +99,21 @@ class NInteger : public NExpression {
 public:
   std::int64_t val;
   NInteger(std::int64_t val) : val(val) {}
+  virtual llvm::Value *code_generate(CodeGenContext &);
+  virtual void print(std::ostream &) const;
+};
+
+/**
+ * Name: NBoolean
+ * Construct: Class
+ * Desc: Simple boolean value node, `true` or `false`
+ * Members:
+ *   - val: The boolean value
+ */
+class NBoolean : public NExpression {
+public:
+  bool val;
+  NBoolean(bool val) : val(val) {}
   virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
@@ -159,8 +182,7 @@ public:
   NIdentifier &id;
   NExpressionList args;
   NFunctionCall(NIdentifier &id) : id(id) {}
-  NFunctionCall(NIdentifier &id, NExpressionList args)
-      : id(id), args(args) {}
+  NFunctionCall(NIdentifier &id, NExpressionList args) : id(id), args(args) {}
   virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
@@ -178,7 +200,7 @@ class NUnaryExpression : public NExpression {
 public:
   int op;
   NExpression &rhs;
-  NUnaryExpression(int op, NExpression &rhs) : rhs(rhs), op(op) {}
+  NUnaryExpression(int op, NExpression &rhs) : op(op), rhs(rhs) {}
   virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
@@ -199,7 +221,7 @@ public:
   NExpression &lhs;
   NExpression &rhs;
   NBinaryExpression(NExpression &lhs, int op, NExpression &rhs)
-      : lhs(lhs), rhs(rhs), op(op) {}
+      : op(op), lhs(lhs), rhs(rhs) {}
   virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };
@@ -425,6 +447,8 @@ public:
  *   - args: Vector of NVariableDeclaration representing the variable
  *     arguments created when the function is called
  *   - block: The block of statements to be ran upon function call
+ *   - llvm_fn: The LLVM function, set once the prototype has been declared
+ *     (see `declare`)
  */
 class NFunctionDeclaration : public NStatement {
 public:
@@ -432,11 +456,13 @@ public:
   NIdentifier &id;
   NVariableList args;
   NBlock &block;
+  llvm::Function *llvm_fn = nullptr;
   NFunctionDeclaration(NIdentifier &type, NIdentifier &id, NBlock &block)
       : type(type), id(id), block(block) {}
   NFunctionDeclaration(NIdentifier &type, NIdentifier &id, NVariableList args,
                        NBlock &block)
       : type(type), id(id), args(args), block(block) {}
+  llvm::Function *declare(CodeGenContext &);
   virtual llvm::Value *code_generate(CodeGenContext &);
   virtual void print(std::ostream &) const;
 };

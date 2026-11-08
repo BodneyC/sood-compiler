@@ -1,0 +1,4 @@
+# vim: ft=sood
+#! Cannot use a string as a integer
+
+x is an integer of value 'nope'.

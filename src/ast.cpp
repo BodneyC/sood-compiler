@@ -149,6 +149,10 @@ void NIdentifier::print(std::ostream &out) const {
 
 void NInteger::print(std::ostream &out) const { out << "int(" << val << ")"; }
 
+void NBoolean::print(std::ostream &out) const {
+  out << "bool(" << (val ? "true" : "false") << ")";
+}
+
 void NRead::print(std::ostream &out) const {
   out << indt.indent() << "read { from: " << from << ", to: " << to << " }"
       << '\n';
