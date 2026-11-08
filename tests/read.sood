@@ -1,0 +1,18 @@
+# vim: ft=sood
+
+#< 42
+#< 2.5
+#< hello there
+
+n is an integer.
+f is a float.
+s is a string.
+read from stdin to n.
+read from stdin to f.
+read from stdin to s.
+write n plus 1 to stdout. write '\n' to stdout.
+write f multiplied by 2 to stdout. write '\n' to stdout.
+write s to stdout. write '\n' to stdout.
+#> 43
+#> 5
+#> hello there

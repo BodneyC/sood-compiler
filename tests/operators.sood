@@ -1,0 +1,68 @@
+# vim: ft=sood
+
+# Precedence
+write 2 plus 3 multiplied by 4 to stdout. write '\n' to stdout.
+#> 14
+write (2 plus 3) multiplied by 4 to stdout. write '\n' to stdout.
+#> 20
+write 10 minus 4 minus 3 to stdout. write '\n' to stdout.
+#> 3
+write 7 modulo 4 plus 1 to stdout. write '\n' to stdout.
+#> 4
+
+# Integers and floats
+write 1 plus 2.5 to stdout. write '\n' to stdout.
+#> 3.5
+write 7.5 divided by 2 to stdout. write '\n' to stdout.
+#> 3.75
+write 7 divided by 2 to stdout. write '\n' to stdout.
+#> 3
+write negative 3 to stdout. write '\n' to stdout.
+#> -3
+write negative 1.5 to stdout. write '\n' to stdout.
+#> -1.5
+x is a float of value 3.
+write x divided by 2 to stdout. write '\n' to stdout.
+#> 1.5
+i is an integer of value 3.9.
+write i to stdout. write '\n' to stdout.
+#> 3
+
+# Booleans
+write true to stdout. write '\n' to stdout.
+#> true
+write 1 is less than 2 to stdout. write '\n' to stdout.
+#> true
+write 2 is more than or equal to 3 to stdout. write '\n' to stdout.
+#> false
+write not 1 is equal to 2 to stdout. write '\n' to stdout.
+#> true
+write true and false to stdout. write '\n' to stdout.
+#> false
+write false alternatively true to stdout. write '\n' to stdout.
+#> true
+write 1 is less than 2 and 3 is less than 4 to stdout. write '\n' to stdout.
+#> true
+b is an integer of value 5 is more than 2.
+write b to stdout. write '\n' to stdout.
+#> 1
+
+# Short-circuiting, `noisy` is never called
+noisy is a function of type integer and of statements:
+  write 'noisy\n' to stdout;
+  return 1.
+write false and noisy called with no arguments to stdout. write '\n' to stdout.
+#> false
+write true alternatively noisy called with no arguments to stdout.
+write '\n' to stdout.
+#> true
+
+# Strings
+write 'abc' is equal to 'abc' to stdout. write '\n' to stdout.
+#> true
+write 'abc' is less than 'abd' to stdout. write '\n' to stdout.
+#> true
+write 'a' is not equal to 'a' to stdout. write '\n' to stdout.
+#> false
+write 'tab\there\\n' to stdout. write '\n' to stdout.
+#> tab	here\n

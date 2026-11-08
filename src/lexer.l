@@ -7,7 +7,7 @@
 #define TOKEN(t)   (yylval.val = t);
 
 void yyerror(const char *s) {
-  std::printf("Lexer/parser error on line %d: %s\n", yylineno, s);
+  std::fprintf(stderr, "Syntax error on line %d: %s\n", yylineno, s);
   std::exit(1);
 }
 
@@ -60,6 +60,9 @@ an?                        return TAN;
 "("                        return TPARO;
 ")"                        return TPARC;
 
+"true"                     TOKEN(1);                     return TBOOLEAN;
+"false"                    TOKEN(0);                     return TBOOLEAN;
+
 "if"                       return TIF;
 "else"                     return TELSE;
 "while"                    return TWHILE;
@@ -76,7 +79,10 @@ an?                        return TAN;
 ["][^"]*["]                SAVE_TOKEN; return TSTRING;
 ['][^']*[']                SAVE_TOKEN; return TSTRING;
 
-.                          printf("Invalid token\n"); yyterminate();
+.                          {
+                             std::fprintf(stderr, "Invalid character '%s' on line %d\n", yytext, yylineno);
+                             std::exit(1);
+                           }
 
 %%
 

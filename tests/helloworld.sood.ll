@@ -1,18 +1,15 @@
 ; ModuleID = 'mod_main'
 source_filename = "mod_main"
+target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:64-S128-Fn32"
+target triple = "arm64-apple-darwin27.2.0"
 
-@numeric_fmt_spc = private unnamed_addr constant [3 x i8] c"%d\00", align 1
-@string_fmt_spc = private unnamed_addr constant [3 x i8] c"%s\00", align 1
-@l_str = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
+@str = private unnamed_addr constant [13 x i8] c"hello world\0A\00", align 1
+@str.1 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
 
-declare i32 @printf(i8*, ...)
-
-define void @main() {
+define i32 @main() {
 entry:
-  %b = alloca i64
-  store i64 2, i64* %b
-  %_val_load = load i64, i64* %b
-  %_printf_call = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @numeric_fmt_spc, i32 0, i32 0), i64 %_val_load)
-  %_printf_call1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @string_fmt_spc, i32 0, i32 0), i8* getelementptr inbounds ([2 x i8], [2 x i8]* @l_str, i32 0, i32 0))
-  ret void
+  %write = call i32 (i32, ptr, ...) @dprintf(i32 1, ptr @str.1, ptr @str)
+  ret i32 0
 }
+
+declare i32 @dprintf(i32, ptr, ...)

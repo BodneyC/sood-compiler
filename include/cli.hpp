@@ -1,4 +1,5 @@
 #include <cxxopts.hpp>
+#include <iostream>
 #include <string>
 
 /* clang-format off */ // The factory pattern will all expand
@@ -14,6 +15,7 @@ struct SoodArgs {
   bool stop_after_ast;
   bool stop_after_llvm_ir;
   bool stop_after_object;
+  unsigned opt_level;
   std::string input;
   std::string output;
   SoodArgs set_debug(bool b) { debug = b; return *this; }
@@ -24,6 +26,7 @@ struct SoodArgs {
   SoodArgs set_run_llvm_ir(bool b) { run_llvm_ir = b; return *this; }
   SoodArgs set_stop_after_object(bool b) { stop_after_object = b; return *this; }
   SoodArgs set_stop_after_llvm_ir(bool b) { stop_after_llvm_ir = b; return *this; }
+  SoodArgs set_opt_level(unsigned u) { opt_level = u; return *this; }
   SoodArgs set_input(std::string s) { input = s; return *this; }
   SoodArgs set_output(std::string s) { output = s; return *this; }
 };

@@ -7,6 +7,7 @@ NBlock *prg;
 %}
 
 %locations
+%define parse.error verbose
 
 %union {
   Node                 *node;
@@ -25,21 +26,61 @@ NBlock *prg;
   std::vector<NVariableDeclaration *> *v_n_var_decl;
 }
 
-%token <string> /* types      */ TIDENT TFLOAT TINTEGER TSTRING TVOID
-%token <string> /* grammar    */ TCOMMA TPERIOD TCALLED TSEMIC TCOLON
-%token <string> /*            */ TFUNCTION TIS TOFDEFAULT TOFTYPE TOFVALUE
-%token <string> /*            */ TRETURN TWITHARGS TWITH TAN TPARO TPARC
-%token <string> /*            */ TOFSTMT TOFSTMTS
-%token <string> /* constructs */ TIF TELSE TWHILE TUNTIL TNOARGS TASARGS
-%token <string> /*            */ TREAD TWRITE TTO TFROM
-%token <val>    /* operators  */ TPLS TMNS TMUL TDIV TMOD
-%token <val>    /* boolean    */ TEQ TNE TLT TLE TMT TME TNOT TNEG TAND TALT
+%token <string> TIDENT     "identifier"
+%token <string> TFLOAT     "float"
+%token <string> TINTEGER   "integer"
+%token <string> TSTRING    "string"
+%token <val>    TBOOLEAN   "boolean"
+%token <string> TCOMMA     ","
+%token <string> TPERIOD    "."
+%token <string> TCALLED    "called"
+%token <string> TSEMIC     ";"
+%token <string> TCOLON     ":"
+%token <string> TFUNCTION  "function"
+%token <string> TIS        "is"
+%token <string> TOFDEFAULT "of default value"
+%token <string> TOFTYPE    "of type"
+%token <string> TOFVALUE   "of value"
+%token <string> TRETURN    "return"
+%token <string> TWITHARGS  "with arguments of"
+%token <string> TWITH      "with"
+%token <string> TAN        "a/an"
+%token <string> TPARO      "("
+%token <string> TPARC      ")"
+%token <string> TOFSTMT    "of the statement"
+%token <string> TOFSTMTS   "of statements"
+%token <string> TIF        "if"
+%token <string> TELSE      "else"
+%token <string> TWHILE     "while"
+%token <string> TUNTIL     "until"
+%token <string> TNOARGS    "no arguments"
+%token <string> TASARGS    "as arguments"
+%token <string> TREAD      "read"
+%token <string> TWRITE     "write"
+%token <string> TTO        "to"
+%token <string> TFROM      "from"
+%token <val>    TPLS       "plus"
+%token <val>    TMNS       "minus"
+%token <val>    TMUL       "multiplied by"
+%token <val>    TDIV       "divided by"
+%token <val>    TMOD       "modulo"
+%token <val>    TEQ        "is equal to"
+%token <val>    TNE        "is not equal to"
+%token <val>    TLT        "is less than"
+%token <val>    TLE        "is less than or equal to"
+%token <val>    TMT        "is more than"
+%token <val>    TME        "is more than or equal to"
+%token <val>    TNOT       "not"
+%token <val>    TNEG       "negative"
+%token <val>    TAND       "and"
+%token <val>    TALT       "alternatively"
 
-%type <n_expr>          numeric string expr arithmetic
+%type <n_expr>          numeric string boolean expr arithmetic
 %type <n_expr>          binary_comparison unary_comparison func_call
 %type <n_identifier>    identifier
-%type <n_block>         program stmts block single_block
-%type <n_statement>     stmt var_decl func_decl func_decl_single
+%type <n_block>         program stmts block block_stmts single_block
+%type <n_statement>     stmt simple_stmt compound_stmt
+%type <n_statement>     var_decl func_decl func_decl_single
 %type <n_statement>     if_stmt while_stmt until_stmt io_stmt
 %type <n_variable_decl> func_decl_arg
 %type <v_n_var_decl>    func_decl_args
@@ -48,13 +89,17 @@ NBlock *prg;
 %precedence TIF
 %precedence TPARO
 
-%left TEQ TNE TLT TLE TMT TME TAND TALT
-%left TMOD
-%left TMUL TDIV
-%left TPLS TMNS
-
 %right TELSE
-%right TNOT TNEG
+
+/* Lowest to highest, `not` binds looser than comparisons so that
+ * `not a is equal to b` means `not (a is equal to b)` */
+%left TALT
+%left TAND
+%right TNOT
+%left TEQ TNE TLT TLE TMT TME
+%left TPLS TMNS
+%left TMUL TDIV TMOD
+%right TNEG
 
 %start program
 
@@ -67,21 +112,29 @@ stmts : stmt       { $$ = new NBlock(); $$->stmts.push_back($1); }
       | stmts stmt { $1->stmts.push_back($2); }
       ;
 
-io_stmt : TREAD TFROM expr TTO expr TPERIOD { $$ = new NRead(*$3, *$5); }
-        | TWRITE expr TTO expr TPERIOD { $$ = new NWrite(*$2, *$4); }
+io_stmt : TREAD TFROM expr TTO expr { $$ = new NRead(*$3, *$5); }
+        | TWRITE expr TTO expr { $$ = new NWrite(*$2, *$4); }
         ;
 
-stmt : var_decl
-     | func_decl
-     | func_decl_single
-     | if_stmt
-     | while_stmt
-     | until_stmt
-     | io_stmt
-     | expr TPERIOD { $$ = new NExpressionStatement(*$1); }
-     | identifier TIS expr TPERIOD  { $$ = new NAssignment(*$1, *$3); }
-     | TRETURN expr TPERIOD { $$ = new NReturnStatement(*$2); }
+/* At the top level, simple statements end with a period, statements taking a
+ * block end with the period that ends their block */
+stmt : simple_stmt TPERIOD
+     | compound_stmt
      ;
+
+simple_stmt : var_decl
+            | io_stmt
+            | expr { $$ = new NExpressionStatement(*$1); }
+            | identifier TIS expr { $$ = new NAssignment(*$1, *$3); }
+            | TRETURN expr { $$ = new NReturnStatement(*$2); }
+            ;
+
+compound_stmt : func_decl
+              | func_decl_single
+              | if_stmt
+              | while_stmt
+              | until_stmt
+              ;
 
 func_call_args : TWITH expr
                  { $$ = new NExpressionList(); $$->push_back($2); }
@@ -97,6 +150,7 @@ func_call : identifier TCALLED TWITH TNOARGS { $$ = new NFunctionCall(*$1); }
 expr : identifier { $$ = $1; }
      | numeric
      | string
+     | boolean
      | arithmetic
      | binary_comparison
      | unary_comparison
@@ -113,6 +167,9 @@ numeric : TINTEGER { $$ = new NInteger(atol($1->c_str())); delete $1; }
 
 string : TSTRING { $$ = new NString(*$1); delete $1; }
        ;
+
+boolean : TBOOLEAN { $$ = new NBoolean($1); }
+        ;
 
 arithmetic : expr TPLS expr
              { $$ = new NBinaryExpression(*$1, $2, *$3); }
@@ -131,6 +188,7 @@ binary_comparison : expr TEQ expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TLT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TLE expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TMT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
+                  | expr TME expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TAND expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   | expr TALT expr { $$ = new NBinaryExpression(*$1, $2, *$3); }
                   ;
@@ -139,17 +197,28 @@ unary_comparison : TNOT expr { $$ = new NUnaryExpression($1, *$2); }
                  | TNEG expr { $$ = new NUnaryExpression($1, *$2); }
                  ;
 
-var_decl : identifier TIS TAN identifier TOFVALUE expr TPERIOD
+var_decl : identifier TIS TAN identifier TOFVALUE expr
            { $$ = new NVariableDeclaration(*$4, *$1, $6); }
-         | identifier TIS TAN identifier TPERIOD
+         | identifier TIS TAN identifier
            { $$ = new NVariableDeclaration(*$4, *$1); }
          ;
 
-single_block : stmt TPERIOD TPERIOD { $$ = new NBlock(); $$->stmts.push_back($1); }
+single_block : simple_stmt TPERIOD   { $$ = new NBlock(); $$->stmts.push_back($1); }
+             | compound_stmt TPERIOD { $$ = new NBlock(); $$->stmts.push_back($1); }
              ;
 
-block : stmts TPERIOD TPERIOD { $$ = $1; } /* stmts creates a new block */
-      | TPERIOD TPERIOD       { $$ = new NBlock(); }
+/* Within a block, simple statements are separated by semicolons and the last
+ * ends the block with a period. Statements taking a block are already ended by
+ * their own period, so need no separator, but one ending the outer block needs
+ * a second period */
+block_stmts : %empty                         { $$ = new NBlock(); }
+            | block_stmts simple_stmt TSEMIC { $1->stmts.push_back($2); }
+            | block_stmts compound_stmt      { $1->stmts.push_back($2); }
+            ;
+
+block : block_stmts simple_stmt TPERIOD   { $1->stmts.push_back($2); $$ = $1; }
+      | block_stmts compound_stmt TPERIOD { $1->stmts.push_back($2); $$ = $1; }
+      | TPERIOD                           { $$ = new NBlock(); }
       ;
 
 func_decl_arg : TAN identifier identifier

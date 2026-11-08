@@ -20,5 +20,10 @@ src/sood
 *.o
 *.bak
 tests/*
-!tests/*.{sood,ll,sh}
+!tests/*.sood
+!tests/*.ll
+!tests/*.sh
 *.out
+
+# Out-of-source build directory
+build/

@@ -18,9 +18,9 @@ b is an integer of value 10.
 b is b plus 2.
 
 if b is more than 5,
-  write 'More\n' to stdout...
+  write 'More\n' to stdout.
 else,
-  write 'Less\n' to stdout...
+  write 'Less\n' to stdout.
 
 # write b to stdout.
 # write 10 plus 5 to stdout.

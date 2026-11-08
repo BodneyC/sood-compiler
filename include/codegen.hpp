@@ -2,76 +2,65 @@
 #define __CODE_GEN_HPP__
 
 #include <iostream>
-#include <stack>
-#include <typeinfo>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/GenericValue.h>
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/CallingConv.h>
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/IRPrintingPasses.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/FileSystem.h>
-#include <llvm/Support/Host.h>
-#include "llvm/Support/TargetRegistry.h"
 #include <llvm/Support/raw_ostream.h>
 
 struct CodeGenException : public std::exception {
   std::string message = "Generic code generation exception";
+  int line = 0; // Set by the innermost statement the exception passes through
   CodeGenException() {}
   CodeGenException(std::string message) : message(message) {}
   const char *what() const throw() { return message.c_str(); }
 };
 
-struct SoodStringException : public std::exception {
-  std::string message = "Generic sood string exception";
-  SoodStringException() {}
-  SoodStringException(std::string message) : message(message) {}
-  const char *what() const throw() { return message.c_str(); }
-};
+namespace llvm {
+class TargetMachine;
+}
 
 class NBlock;
+class NFunctionDeclaration;
 class CodeGenContext;
 
 extern llvm::LLVMContext LLVM_CTX;
 extern llvm::IRBuilder<> BUILDER;
 
+extern llvm::Type *BOOLEAN_TYPE;
 extern llvm::Type *DOUBLE_TYPE;
 extern llvm::Type *INTEGER_TYPE;
 extern llvm::Type *STRING_TYPE;
+extern llvm::Type *VOID_TYPE;
 
 typedef std::tuple<llvm::Value *, llvm::Type *> ValTypeTuple;
-
-llvm::Constant *get_i8_str_ptr(char const *, llvm::Twine const &);
 
 /**
  * Name: CodeGenBlock
  * Construct: Class
- * Desc: Context information for any given block
+ * Desc: A lexical scope, one is pushed for each function body and for each
+ *   block of an `if`, `while` or `until`
  * Members:
- *   - block: A pointer to the LLVM block corresponding to the CodeGenBlock
- *     instance
- *   - ret_val: A pointer to the return value of the block
- *   - locals: A list of the in-scope variables for the block
- * Notes:
- *   - The "global" function's locals are not currently available to
- *     child-blocks, this is yet to be implemented
- *   - `ret_val` is not currently used. But, as LLVM doesn't seem to like
- *     multiple return statements in a function, this may be used at one point
- *     and a single `return` enforced
+ *   - locals: The variables declared directly within this scope, mapping the
+ *     name to the pointer of the variable's storage and its type
+ *   - fn_boundary: If true, name lookup stops at this scope (and continues at
+ *     the global scope) so that a function cannot see its caller's locals
  */
 class CodeGenBlock {
 public:
-  llvm::BasicBlock *block;
-  llvm::Value *ret_val;
   std::map<std::string, ValTypeTuple> locals;
+  bool fn_boundary = false;
 };
 
 /**
@@ -79,50 +68,68 @@ public:
  * Construct: Class
  * Desc: Used to manage the AST -> LLVM IR -> Object phases of the compiler
  * Members:
- *   - blocks - Stack of CodeGenBlock* referring to the block in the Sood
- *     source code
- *   - fn_main - Pointer to the "global" functino of the Sood source code
+ *   - scopes: Stack of lexical scopes (see `CodeGenBlock`), the bottom-most
+ *     scope is the global scope; variables declared there are LLVM globals and
+ *     so are visible from within functions
+ *   - fn_main - Pointer to the "global" function of the Sood source code
  *   - module - The code is loaded to this object from the root node of the AST
- *   - printf_function - Creation of the `printf` function in the resulting IR,
- *     linked to libc after code generation
- *   - fmt_specifiers - Global string references for `"%s"` and `"%d"`
+ *   - fn_decls - The AST nodes of each declared function, used to fill in
+ *     default arguments at call sites
+ *   - string_constants - Cache of the global strings emitted so far, so equal
+ *     literals share one global
+ *   - target_machine - The native target, used for the module's data layout
+ *     and to emit object code
  */
 class CodeGenContext {
-  std::stack<CodeGenBlock *> blocks;
-  llvm::Function *fn_main;
-  llvm::Function *create_fn_printf();
+  std::vector<CodeGenBlock> scopes;
+  std::unique_ptr<llvm::TargetMachine> target_machine;
+  std::map<std::string, llvm::Constant *> string_constants;
+  llvm::Function *fn_main = nullptr;
 
 public:
-  llvm::Module *module;
-  llvm::Function *printf_function;
-  std::map<std::string, llvm::Value *> fmt_specifiers;
+  std::unique_ptr<llvm::Module> module;
+  std::map<std::string, NFunctionDeclaration *> fn_decls;
 
   CodeGenContext(std::string module_name = "mod_main");
+  ~CodeGenContext();
 
   void code_generate(NBlock &root);
   void print_llvm_ir();
   void print_llvm_ir_to_file(std::string &);
-  void verify_module();
-  llvm::GenericValue code_run();
+  bool verify_module();
+  void optimize(unsigned);
+  int code_run();
   int write_object(std::string &);
-  ValTypeTuple get_local(std::string s) { return blocks.top()->locals[s]; }
-  void set_local(std::string s, llvm::Value *val, llvm::Type *type) {
-    blocks.top()->locals[s] = std::make_pair(val, type);
+
+  /* ------ Scopes ------ */
+
+  void push_scope(bool fn_boundary = false) {
+    scopes.emplace_back();
+    scopes.back().fn_boundary = fn_boundary;
   }
-  std::map<std::string, ValTypeTuple> &locals() { return blocks.top()->locals; }
-  llvm::BasicBlock *current_block() { return blocks.top()->block; }
-  void push_block(llvm::BasicBlock *block) {
-    blocks.push(new CodeGenBlock());
-    blocks.top()->ret_val = nullptr;
-    blocks.top()->block = block;
+  void pop_scope() { scopes.pop_back(); }
+  bool in_global_scope() { return scopes.size() == 1; }
+  bool find_local(const std::string &, ValTypeTuple &);
+  void set_local(const std::string &s, llvm::Value *val, llvm::Type *type) {
+    scopes.back().locals[s] = std::make_tuple(val, type);
   }
-  void pop_block() {
-    CodeGenBlock *top = blocks.top();
-    blocks.pop();
-    delete top;
+
+  /* ------ Helpers for the AST nodes ------ */
+
+  llvm::Function *current_function() {
+    return BUILDER.GetInsertBlock()->getParent();
   }
-  void set_return_value(llvm::Value *value) { blocks.top()->ret_val = value; }
-  llvm::Value *get_return_value() { return blocks.top()->ret_val; }
+  llvm::Function *get_libc(const std::string &);
+  bool is_reserved(const std::string &);
+  llvm::Constant *string_constant(const std::string &);
+  llvm::Value *create_variable(const std::string &, llvm::Type *);
+  void branch_to(llvm::BasicBlock *);
 };
+
+/* ------ Type helpers (see `src/ast-codegen.cpp`) ------ */
+
+std::string type_name(llvm::Type *);
+llvm::Constant *zero_value_for(CodeGenContext &, llvm::Type *);
+llvm::Value *cast_to(llvm::Value *, llvm::Type *, const std::string &);
 
 #endif

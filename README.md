@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD033 MD013 -->
+<!-- markdownlint-disable MD033 MD013 MD041 -->
 
 <p align="center"><img height="160px" src="./img/sood-logo.all-circles.svg" alt="sood-logo"/></p>
 
@@ -10,7 +10,7 @@ Sood is a (very) minimal general purpose programming language based on some fair
 
 - [The Concept](#the-concept)
 - [The Compiler](#the-compiler)
-  - [Installation](#installation)
+  - [Install](#install)
   - [Usage](#usage)
   - [Compiler Outputs](#compiler-outputs)
 - [Language Specification](#language-specification)
@@ -47,16 +47,30 @@ Both are sentences, but the programmatic meaning is only obvious in Sood.
 
 The project has a few dependencies
 
-- [Bison](https://www.gnu.org/software/bison/) version: 3.7.2
+- [Bison](https://www.gnu.org/software/bison/) version: 3.0+ (tested with 3.8.2)
 - [Flex](https://github.com/westes/flex/) version: 2.6.4
-- [LLVM](https://llvm.org/) version: 11.0.0
-- [Spdlog](https://github.com/gabime/spdlog) version: 1.8.1
+- [LLVM](https://llvm.org/) version: 23 (opaque pointers and the new pass manager are required)
+- [Spdlog](https://github.com/gabime/spdlog) version: 1.8.1+
+- [CXXOpts](https://github.com/jarro2783/cxxopts) version: 3+
+- A C compiler (`gcc` on the `PATH`) to link the final executable against libc
 
 Should be simple enough, but I know it never goes down like...
 
 ```sh
-cmake . && make
+cmake -B build && cmake --build build
 ```
+
+On macOS with Homebrew, the system Bison is too old, so:
+
+```sh
+brew install llvm bison spdlog cxxopts
+cmake -B build \
+  -DLLVM_DIR="$(brew --prefix llvm)/lib/cmake/llvm" \
+  -DBISON_EXECUTABLE="$(brew --prefix bison)/bin/bison"
+cmake --build build
+```
+
+The tests can then be run with `ctest --test-dir build` or `tests/run-tests.sh`, see the top of that script for how expectations are written in the test files.
 
 ## Usage
 
@@ -76,12 +90,15 @@ Usage:
   -S, --stop-after-ast      Stop after generating the AST
   -C, --stop-after-llvm-ir  Stop after generating the LLVM IR
   -O, --stop-after-object   Stop after writing object file
+  -p, --opt-level arg       LLVM optimization level (0-3) (default: 0)
   -o, --output arg          Output file name (default: a.sood.out)
 ```
 
 In which, the input file may either be specified as the value of the `-i` options, or, as the single positional parameter. If no input parameter is given, the compiler uses stdin.
 
 And output (`-o`) is applied to whichever `stop-after-xxx` option is passed. Alternatively, this is the name of the resulting executable binary file.
+
+`-R` runs the program in LLVM's JIT instead of writing a binary, the compiler exits with the program's exit status.
 
 ## The Compiler
 
@@ -116,8 +133,8 @@ __Note__: Void functions do exist, but I made this an `integer` and return `0` j
 # tests/helloworld-fn.sood
 
 my_function is a function of type integer and of statements:
-  write 'Hello world\n' to stdout.
-  return 0...
+  write 'Hello world\n' to stdout;
+  return 0.
 
 my_function called with no arguments.
 ```
@@ -157,30 +174,25 @@ As we are making use of the [LLVM C++ API](https://llvm.org/docs/ProgrammersManu
 ; ModuleID = 'mod_main'
 source_filename = "mod_main"
 
-@numeric_fmt_spc = private unnamed_addr constant [3 x i8] c"%d\00", align
-1
-@string_fmt_spc = private unnamed_addr constant [3 x i8] c"%s\00", align 1
-@l_str = private unnamed_addr constant [13 x i8] c"Hello world\0A\00", ali
-gn 1
+@str = private unnamed_addr constant [13 x i8] c"Hello world\0A\00", align 1
+@str.1 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
 
-declare i32 @printf(i8*, ...)
-
-define void @main() {
+define i32 @main() {
 entry:
-  %_f_call = call i64 @my_function()
-  ret void
+  %my_function_call = call i64 @my_function()
+  ret i32 0
 }
 
 define internal i64 @my_function() {
 my_function__entry:
-  %_printf_call = call i32 (i8*, ...) @printf(i8* getelementptr inbounds (
-[3 x i8], [3 x i8]* @string_fmt_spc, i32 0, i32 0), i8* getelementptr inbo
-unds ([13 x i8], [13 x i8]* @l_str, i32 0, i32 0))
+  %write = call i32 (i32, ptr, ...) @dprintf(i32 1, ptr @str.1, ptr @str)
   ret i64 0
 }
+
+declare i32 @dprintf(i32, ptr, ...)
 ```
 
-Where the `printf` function is later linked from libc at compilation.
+Where the `dprintf` function is later linked from libc at compilation (the `target` lines, specific to your machine, are left out here).
 
 The command in use here is:
 
@@ -188,7 +200,7 @@ The command in use here is:
 sood -C -o tests/helloworld-fn.ll tests/helloworld-fn.sood
 ```
 
-__Note__: I know this isn't tremendous IR code, but it will hopefully be improved in time and it's functional right now.
+Passing `-p 2` (or `1`, `3`) runs LLVM's optimization pipeline over the module before it is written.
 
 #### Object
 
@@ -291,6 +303,8 @@ would be translated to `\nThis is\na multiline string`.
 
 Very few escape characters are processed, mainly due to my laziness, these include `\n`, `\t`, and `\r`. Double-backslashes are also parsed, so `\\n` would come out as `\n` literally.
 
+Strings may be compared with the boolean operations (`is equal to`, `is less than`, etc.), comparing alphabetically.
+
 So, `this is a\nstring`, would evaluate to:
 
 ```txt
@@ -308,7 +322,21 @@ this is a\nstring
 
 Statements in Sood follow a sentence-like pattern, i.e. they are a series of phrases, occasionally separated by commas, ending with a full-stop (period).
 
-Statement which take of a block of other statments, for example function declarations, begin with an incomplete sentence followed by a comma, are proceeded by the list of statements, and end with a double full-stop. So, the last statement's ending period and the two that form the end of the block, together form an ellipse.
+Statements which take a block of other statements, for example function declarations, begin with an incomplete sentence followed by a comma (or colon) and are followed by the list of statements. Within a block, statements are separated by semi-colons and the last one ends the block with a full-stop, much like a list in an English sentence.
+
+A statement which itself takes a block (an `if`, say) is already ended by the full-stop of its own block, so needs no semi-colon after it. If such a statement is the last in the outer block, a second full-stop on its own ends the outer block:
+
+```sood
+sign is a function with arguments of: an integer n; and of statements:
+  write 'sign: ' to stdout;
+  if n is less than 0,
+    write '-' to stdout.
+  else,
+    write '+' to stdout.
+  .
+```
+
+An empty block is just a full-stop, e.g. `while true, .`
 
 Whitespace is ignored in the majority of the language (with the exception of within strings), so one may separate a statement, word by word, with spaces, tabs, and newline to whatever extent.
 
@@ -351,9 +379,13 @@ Assigning the value of `98` to that horrendously named variable.
 
 Operations are like the rest of the language, wordy. This is to avoid potentially confusing or misunderstood grammatic characters. So instead of the standard `<=`, there is `less than or equal to`.
 
-These operations will perform some naive type-casting but only between integer and floating point.
+These operations will perform some naive type-casting but only between integer and floating point: if either side is a float, the operation is done with floats. Booleans (the result of comparisons, or `true`/`false`) are treated as `1` and `0` when used as numbers, and numbers are true when non-zero when used as conditions.
 
-__Note__: Sood supports various operations however at the time of writing very few operations will work on strings, so attempting to concatenate two string with the `plus` keyword will throw a syntax error; this is in the _todo_ pile.
+From lowest to highest precedence: `alternatively`, `and`, `not`, the comparisons, `plus`/`minus`, `multiplied by`/`divided by`/`modulo`, then `negative`. So `not a is equal to b` means `not (a is equal to b)`, and `1 plus 2 multiplied by 3` is `7`. Parentheses may be used to group operations.
+
+`and` and `alternatively` short-circuit, so the right hand side is only evaluated when needed.
+
+__Note__: Sood supports various operations however at the time of writing very few operations will work on strings, so attempting to concatenate two string with the `plus` keyword will throw an error; this is in the _todo_ pile.
 
 #### Arithmetic
 
@@ -379,8 +411,8 @@ Examples evaluate to `true`.
 | Less or equal    | `<=`     | `is less than or equal to` | `1 is less than or equal to 2` |
 | Greater          | `>`      | `is more than`             | `1 is more than 0`             |
 | Greater or equal | `>=`     | `is more than or equal to` | `1 is more than or equal to 0` |
-| And              | `&&`     | `and`                     | `true and true`               |
-| Or               | `\|\|`     | `alternatively`            | `false alternatively true`     |
+| And              | `&&`     | `and`                      | `true and true`                |
+| Or               | `\|\|`   | `alternatively`            | `false alternatively true`     |
 
 The use of `alternatively` in place of "or" is just because it made me laugh.
 
@@ -403,34 +435,41 @@ These take a very similar form to variable declaration with the exception of ini
 
 Argument lists begin with the phrase `with arguments of:` followed by arguments of the form `a <type> <identifer>`, e.g. `a string my_string`. This list ends with a semi-colon `;`.
 
-The start of the block is denoted `and of statements:`. The block is then closed with two full-stops.
+The start of the block is denoted `and of statements:`. The statements are separated with semi-colons and the block is closed by the full-stop of the last.
 
 For example:
 
 ```sood
 add_two is a function of type integer with arguments of: an integer n; and of statements:
-  n is n plus 2.
-  return n...
+  n is n plus 2;
+  return n.
 ```
 
-or, syntactically equivalent but perhaps more indentedly readable:
+or, syntactically equivalent but perhaps more readable on one line:
 
 ```sood
-add_two is a function of type integer with arguments of:
-    an integer n; and of statements:
-  n is n plus 2.
-  return n.
-..
+add_two is a function of type integer with arguments of: an integer n; and of statements: n is n plus 2; return n.
 ```
-
-which some may prefer.
 
 If a function shouldn't return a value, i.e. a `void` function, simply omit the `of type` phrase, for example:
 
 ```sood
 add_two is a function with arguments of: an integer n; and of statements:
-  write n plus 2 to stdout...
+  write n plus 2 to stdout.
 ```
+
+Arguments may be given a default value with `of default value`, these may be left out of a call (all arguments following one with a default must also have one):
+
+```sood
+greet is a function with arguments of:
+    a string name, and a string greeting of default value 'Hello';
+    and of statements:
+  write greeting to stdout.
+```
+
+A function which reaches the end of its statements without a `return` returns zero (or `""`). Top-level functions may be called before they are declared, and variables declared at the top level of the program are visible within functions. Variables declared within a block (of a function, `if`, `while`, or `until`) are only visible within that block.
+
+A `return` at the top level of the program exits with that integer as the exit status.
 
 ### Function Calls
 
@@ -474,21 +513,21 @@ These follow the already establish block notation, for example:
 ```sood
 # Evaluate condition and perform block `if` true
 if my_variable is less than 10,
-  my_variable is my_variable plus one...
+  my_variable is my_variable plus one.
 ```
 
 ```sood
 # Evaluate condition and perform block `while` condition is true
 #  (`until` false)
 while my_variable is less than 10,
-  my_variable is my_variable plus one...
+  my_variable is my_variable plus one.
 ```
 
 ```sood
 # Evaluate condition and perform block `until` condition is true
 #  (`while` false)
 until my_variable is equal to 9,
-  my_variable is my_variable plus one...
+  my_variable is my_variable plus one.
 ```
 
 With the latter two being syntactically equivalent. I've always like the idea of an `until` statement and find it quicker to grasp than the `while` equivalent, I assume this is just a personal preference.
@@ -497,15 +536,19 @@ __Note__: It only occurs to me at the time of writing this readme that the `brea
 
 ### Input/Output
 
-IO is _very_ limited at this point in time, input straight up does not work due to lack of trying - in other words, I haven't got round to it yet (again, in the _todo_ pile).
+IO is _very_ limited at this point in time, it leverages [libc](https://www.wikiwand.com/en/GNU_C_Library)'s `scanf` and `dprintf` functions.
 
-Output is working but only to standard out and leverages [libc](https://www.wikiwand.com/en/GNU_C_Library)'s `printf` function.
-
-The syntax of both input and output imply variable sources/sinks, however this is not the case for the language as it stands.
+The syntax of both input and output imply variable sources/sinks, however only `stdin`, `stdout` and `stderr` are available.
 
 #### Input
 
-__Note__: Not yet implemented
+Input takes the form:
+
+```sood
+read from stdin to my_variable.
+```
+
+Integers and floats are read as numbers, strings read the rest of the line (up to 1023 characters).
 
 #### Output
 
@@ -521,19 +564,13 @@ So, a hello world program in Sood would be:
 write 'Hello world\n' to stdout.
 ```
 
-__Note__: As previously mentioned, only standard out is available at the minute, the output sink _is_ required but _is not_ parsed. The above line is currently equivalent to:
+The sink may either be `stdout` or `stderr`. Booleans are written as `true` or `false`.
 
-```sood
-write 'Hello world\n' to fish.
-write 'Hello world\n' to a_basket_of_muffins.
-write 'Hello world\n' to caterpillars.
-```
-
-## Text Editor Language Support
+## Language Support
 
 There is only support for the [Vim](https://www.vim.org/) editor as, realistically, it's the editor I use most often... well, it's the only editor I use.
 
-A language plugin for Sood, for Vim, can be found [here](https://github.com/BodneyC/sood-vim).
+A language plugin for Sood, for Vim, can be [found here](https://github.com/BodneyC/sood-vim).
 
 It's adds syntax for `.sood` and `.sood-ast` files (see the [compiler outputs section](#compiler-outputs)). It also adds indent support for `.sood` files.
 
